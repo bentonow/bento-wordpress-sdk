@@ -1,0 +1,13 @@
+{
+  "printWidth": 80,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "overrides": [
+    {
+      "files": ["*.php"],
+      "options": {
+        "parser": "php"
+      }
+    }
+  ]
+}
