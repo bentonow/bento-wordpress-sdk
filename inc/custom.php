@@ -20,24 +20,30 @@ class Bento_Custom
    */
   public function scripts_styles()
   {
-    wp_enqueue_script(
-      'bento-js',
-      'https://app.bentonow.com/6a7469acb729820021d3d8965da9fc85.js',
-      [],
-      false,
-      true
-    );
+    $bento_options = get_option('bento_settings');
+    $bento_site_key = $bento_options['bento_site_key'];
 
-    /*
-     * Enqueue scripts.
-     */
-    wp_enqueue_script(
-      'bento-wordpress-sdk-js',
-      plugins_url('assets/js/bento-wordpress-sdk.min.js', dirname(__FILE__)),
-      ['jquery', 'bento-js'],
-      $this->version,
-      true
-    );
+    if (!empty($bento_site_key)) {
+      $test = var_dump($bento_site_key);
+      wp_enqueue_script(
+        'bento-js',
+        "https://app.bentonow.com/{$bento_site_key}.js",
+        [],
+        false,
+        true
+      );
+
+      /*
+       * Enqueue scripts.
+       */
+      wp_enqueue_script(
+        'bento-wordpress-sdk-js',
+        plugins_url('assets/js/bento-wordpress-sdk.min.js', dirname(__FILE__)),
+        ['jquery', 'bento-js'],
+        $this->version,
+        true
+      );
+    }
   }
 }
 
