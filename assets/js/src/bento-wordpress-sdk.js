@@ -83,7 +83,25 @@ const cartCreatedEvent = debounce(function () {
   identifyUser();
 
   sendBentoEventWithCart('$woocommerceCartCreated');
-});
+}, 500);
+
+/* $woocommerceCartUpdated */
+const cartUpdatedEvent = debounce(function () {
+  console.log('$woocommerceCartUpdated');
+
+  identifyUser();
+
+  sendBentoEventWithCart('$woocommerceCartUpdated');
+}, 500);
+
+/* $woocommerceStartedCheckout */
+const startedCheckoutEvent = debounce(function () {
+  console.log('$woocommerceStartedCheckout');
+
+  identifyUser();
+
+  sendBentoEventWithCart('$woocommerceStartedCheckout');
+}, 500);
 
 (function ($) {
   if (typeof bento$ != 'undefined') {
@@ -97,6 +115,17 @@ const cartCreatedEvent = debounce(function () {
             cartCreatedEvent();
           }
         });
+
+        bento$(document.body).on(
+          'updated_cart_totals added_to_cart removed_from_cart',
+          () => {
+            cartUpdatedEvent();
+          }
+        );
+
+        if ($('.woocommerce-checkout').length > 0) {
+          startedCheckoutEvent();
+        }
 
         /**
          * Watch for email input changes.
