@@ -61,10 +61,11 @@ const identifyUser = function () {
   }
 };
 
-/* On email input change */
 const onEmailInputChange = debounce(function () {
   identifyUser();
 }, 500);
+
+/* Bento events */
 
 const sendBentoEventWithCart = debounce(function (eventName) {
   identifyUser();
@@ -107,6 +108,7 @@ const sendBentoEventWithCart = debounce(function (eventName) {
          */
         bento$('#billing_email').bind('blur', onEmailInputChange);
       }
+
       bento.view();
     });
   }
