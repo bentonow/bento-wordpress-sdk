@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "gulp magic"
+  },
   "devDependencies": {
     "@prettier/plugin-php": "^0.14.2",
     "gulp": "^4.0.0",

@@ -62,6 +62,8 @@ class Bento_Helper
     // Activate notice (shown once)
     add_action('admin_notices', [$this, 'activate_notice']);
 
+    require_once 'inc/custom.php';
+
     // Plugin textdomain
     load_plugin_textdomain(
       'bento',

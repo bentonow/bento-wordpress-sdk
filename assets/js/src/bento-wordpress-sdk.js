@@ -1,0 +1,3 @@
+(function ($) {
+  bento.view();
+})(jQuery);
