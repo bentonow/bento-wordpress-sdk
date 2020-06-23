@@ -38,16 +38,6 @@ const isCartEmpty = function () {
   );
 };
 
-const sendBentoEventWithCart = function (eventName) {
-  const data = {
-    action: 'bento_get_cart_items',
-  };
-
-  bento$.get(bento_wordpress_sdk_params.ajax_url, data, function (response) {
-    bento.track(eventName, JSON.parse(response));
-  });
-};
-
 /* Identify current user */
 
 const isValidEmail = function (email) {
@@ -76,31 +66,16 @@ const onEmailInputChange = debounce(function () {
   identifyUser();
 }, 500);
 
-/* $woocommerceCartCreated */
-const cartCreatedEvent = debounce(function () {
-  console.log('$woocommerceCartCreated');
-
+const sendBentoEventWithCart = debounce(function (eventName) {
   identifyUser();
 
-  sendBentoEventWithCart('$woocommerceCartCreated');
-}, 500);
+  const data = {
+    action: 'bento_get_cart_items',
+  };
 
-/* $woocommerceCartUpdated */
-const cartUpdatedEvent = debounce(function () {
-  console.log('$woocommerceCartUpdated');
-
-  identifyUser();
-
-  sendBentoEventWithCart('$woocommerceCartUpdated');
-}, 500);
-
-/* $woocommerceStartedCheckout */
-const startedCheckoutEvent = debounce(function () {
-  console.log('$woocommerceStartedCheckout');
-
-  identifyUser();
-
-  sendBentoEventWithCart('$woocommerceStartedCheckout');
+  bento$.get(bento_wordpress_sdk_params.ajax_url, data, function (response) {
+    bento.track(eventName, JSON.parse(response));
+  });
 }, 500);
 
 (function ($) {
@@ -112,19 +87,19 @@ const startedCheckoutEvent = debounce(function () {
         bento$(document.body).on('added_to_cart', () => {
           if (cartIsEmpty) {
             cartIsEmpty = false;
-            cartCreatedEvent();
+            sendBentoEventWithCart('$woocommerceCartCreated');
           }
         });
 
         bento$(document.body).on(
           'updated_cart_totals added_to_cart removed_from_cart',
           () => {
-            cartUpdatedEvent();
+            sendBentoEventWithCart('$woocommerceCartUpdated');
           }
         );
 
         if ($('.woocommerce-checkout').length > 0) {
-          startedCheckoutEvent();
+          sendBentoEventWithCart('$woocommerceStartedCheckout');
         }
 
         /**
