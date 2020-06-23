@@ -1,4 +1,5 @@
 /* Helpers */
+
 const debounce = (func, delay) => {
   let inDebounce;
   return function () {
@@ -9,7 +10,6 @@ const debounce = (func, delay) => {
   };
 };
 
-/* Get cart hash key */
 const getCartHashKey = function () {
   if (wc_cart_fragments_params) {
     const cart_hash_key = wc_cart_fragments_params.cart_hash_key;
@@ -31,7 +31,25 @@ const getCartHashKey = function () {
   }
 };
 
-/* identifyUser */
+const isCartEmpty = function () {
+  return (
+    getCartHashKey() === null &&
+    bento_wordpress_sdk_params.woocommerce_cart_count === '0'
+  );
+};
+
+const sendBentoEventWithCart = function (eventName) {
+  const data = {
+    action: 'bento_get_cart_items',
+  };
+
+  bento$.get(bento_wordpress_sdk_params.ajax_url, data, function (response) {
+    bento.track(eventName, JSON.parse(response));
+  });
+};
+
+/* Identify current user */
+
 const isValidEmail = function (email) {
   if (typeof email === 'string') {
     return /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email);
@@ -64,28 +82,16 @@ const cartCreatedEvent = debounce(function () {
 
   identifyUser();
 
-  var data = {
-    action: 'bento_get_cart_items',
-  };
-  bento$.get(bento_wordpress_sdk_params.ajax_url, data, function (response) {
-    bento.track('$woocommerceCartCreated', JSON.parse(response));
-  });
+  sendBentoEventWithCart('$woocommerceCartCreated');
 });
 
 (function ($) {
   if (typeof bento$ != 'undefined') {
     bento$(function () {
-      let cartIsEmpty =
-        getCartHashKey() === null &&
-        bento_wordpress_sdk_params.woocommerce_cart_count === '0';
-
-      console.log(cartIsEmpty);
-      console.log(bento_wordpress_sdk_params);
+      let cartIsEmpty = isCartEmpty();
 
       if (bento_wordpress_sdk_params.woocommerce_enabled) {
-        console.log('WooCommerce Enabled');
-
-        bento$(document.body).on('added_to_cart', (e) => {
+        bento$(document.body).on('added_to_cart', () => {
           if (cartIsEmpty) {
             cartIsEmpty = false;
             cartCreatedEvent();
@@ -96,44 +102,6 @@ const cartCreatedEvent = debounce(function () {
          * Watch for email input changes.
          */
         bento$('#billing_email').bind('blur', onEmailInputChange);
-
-        // /**
-        //  * Listen for cart change events then send cart data.
-        //  */
-        // bento$(document.body).on(
-        //   'added_to_cart removed_from_cart updated_cart_totals updated_shipping_method applied_coupon removed_coupon updated_checkout',
-        //   function (event) {
-        //     if (wc_cart_fragments_params) {
-        //       // Get cart hash key from wc_cart_fragments_params variable
-        //       var cart_hash_key = wc_cart_fragments_params.cart_hash_key;
-
-        //       try {
-        //         // Get local storage and session storage for cart dash
-        //         var localStorageItem = localStorage.getItem(cart_hash_key);
-        //         var sessionStorageItem = sessionStorage.getItem(cart_hash_key);
-
-        //         // Check if have local storage or session storage
-        //         if (localStorageItem || sessionStorageItem) {
-        //           // Have items so we'll send the cart data now
-        //           console.log(localStorageItem, sessionStorageItem);
-        //         }
-        //       } catch (e) {}
-        //     }
-        //     sendCartData();
-        //   }
-        // );
-
-        // /**
-        //  * Watch for fragments separate and determine if have data to send.
-        //  * As this event may trigger with no items in cart (initial page
-        //  * load) but no need to send cart then. So we check for items.
-        //  */
-        $(document.body).on(
-          'wc_fragments_refreshed wc_fragment_refresh',
-          function (event) {
-            console.log(wc_cart_fragments_params);
-          }
-        );
       }
       bento.view();
     });
