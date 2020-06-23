@@ -41,23 +41,45 @@ class Bento_Custom
     wp_enqueue_script(
       'bento-wordpress-sdk-js',
       plugins_url('assets/js/bento-wordpress-sdk.min.js', dirname(__FILE__)),
-      ['jquery', 'bento-js'],
+      ['bento-js'],
       $this->version,
       true
     );
-
-    /**
-     * Pass parameters to Metorik JS.
-     */
-    $params = [
-      'woocommerce_enabled' => class_exists('WooCommerce'),
-    ];
+    $params = $this->getBentoWordpressSDKJSParams();
 
     wp_localize_script(
       'bento-wordpress-sdk-js',
       'bento_wordpress_sdk_params',
       $params
     );
+  }
+
+  private function getBentoWordpressSDKJSParams()
+  {
+    /**
+     * Pass parameters to Bento Wordpress SDK.
+     */
+    $params = [
+      'ajax_url' => admin_url('admin-ajax.php'),
+    ];
+
+    $current_user = wp_get_current_user();
+    if (0 == $current_user->ID) {
+      $params['user_logged_in'] = false;
+    } else {
+      $params['user_logged_in'] = true;
+      $params['user_email'] = $current_user->user_email;
+    }
+
+    $params['woocommerce_enabled'] = class_exists('WooCommerce');
+
+    if ($params['woocommerce_enabled']) {
+      $params['woocommerce_cart_count'] = WC()->cart
+        ? WC()->cart->get_cart_contents_count()
+        : 0;
+    }
+
+    return $params;
   }
 }
 
