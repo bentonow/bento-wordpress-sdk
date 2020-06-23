@@ -13,3 +13,7 @@ gulp.task('magic', () => {
     .pipe(uglify())
     .pipe(gulp.dest(jsDest));
 });
+
+gulp.task('watch', function () {
+  gulp.watch('assets/js/src/bento-wordpress-sdk.js', gulp.series('magic'));
+});
