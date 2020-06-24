@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "gulp magic"
+    "build": "gulp magic",
+    "watch": "gulp watch"
   },
   "devDependencies": {
     "@prettier/plugin-php": "^0.14.2",
@@ -9,5 +10,9 @@
     "gulp-uglify": "^3.0.1",
     "prettier": "^2.0.5"
   },
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "dependencies": {
+    "const": "^1.0.0",
+    "gulp-uglify-es": "^2.0.0"
+  }
 }

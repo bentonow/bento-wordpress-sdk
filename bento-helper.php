@@ -62,6 +62,11 @@ class Bento_Helper
     // Activate notice (shown once)
     add_action('admin_notices', [$this, 'activate_notice']);
 
+    if (class_exists('WooCommerce')) {
+      require_once 'inc/ajax.php';
+      require_once 'inc/orders.php';
+    }
+
     require_once 'inc/admin.php';
     require_once 'inc/custom.php';
 
