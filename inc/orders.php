@@ -6,6 +6,11 @@
 class Bento_Helper_Orders
 {
   protected $apiUrl = 'https://app.bentonow.com';
+  protected $eventsWithValue = [
+    '$woocommerceOrderPlaced',
+    '$woocommerceOrderCancelled',
+    '$woocommerceOrderRefunded',
+  ];
 
   /**
    * Constructor.
@@ -65,6 +70,57 @@ class Bento_Helper_Orders
       return;
     }
 
+    $details = [
+      'cart' => [
+        'items' => $this->getOrderItems($order),
+      ],
+    ];
+
+    if (in_array($name, $this->eventsWithValue)) {
+      $details = $this->setEventValue($name, $details);
+    }
+
+    $data = [
+      'site' => $bento_site_key,
+      'type' => $name,
+      'email' => $order->get_billing_email(),
+      'details' => $details,
+    ];
+
+    $response = wp_remote_post($this->apiUrl . '/tracking/generic', [
+      'headers' => ['Content-Type' => 'application/json; charset=utf-8'],
+      'body' => json_encode($data),
+      'method' => 'POST',
+      'data_format' => 'body',
+    ]);
+  }
+
+  private function setEventValue($name, $details)
+  {
+    $amount = 0;
+
+    if ($name === '$woocommerceOrderPlaced') {
+      $amount = $order->get_total();
+    } elseif ($name === '$woocommerceOrderCancelled') {
+      $amount = "-{$order->get_total()}";
+    } elseif ($name === '$woocommerceOrderRefunded') {
+      $amount = "-{$order->get_total_refunded()}";
+    }
+
+    $details['value'] = [
+      'amount' => $amount,
+      'currency' => $order->get_currency(),
+    ];
+
+    $details['unique'] = [
+      'key' => $order->get_order_key(),
+    ];
+
+    return $details;
+  }
+
+  private function getOrderItems($order)
+  {
     $line_items = $order->get_items();
     $items = [];
 
@@ -96,27 +152,7 @@ class Bento_Helper_Orders
       array_push($items, $product_item);
     }
 
-    $data = [
-      'site' => $bento_site_key,
-      'type' => $name,
-      'email' => $order->get_billing_email(),
-      'details' => [
-        'value' => [
-          'amount' => $order->get_total(),
-          'currency' => $order->get_currency(),
-        ],
-        'unique' => [
-          'key' => $order->get_order_key(),
-        ],
-        'cart' => [
-          'items' => $items,
-        ],
-      ],
-    ];
-
-    $response = wp_remote_post($this->apiUrl . '/tracking/generic', [
-      'body' => $data,
-    ]);
+    return $items;
   }
 }
 
