@@ -89,6 +89,7 @@ class Bento_Ajax
       $product['product_price'] = $product['data']->get_price();
       $product['product_regular_price'] = $product['data']->get_regular_price();
       $product['product_sale_price'] = $product['data']->get_sale_price();
+      $product['product_sku'] = $product['data']->get_sku();
       $product['shop_base_currency'] = $base_currency;
     }
     unset($product);

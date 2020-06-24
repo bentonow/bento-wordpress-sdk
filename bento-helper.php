@@ -64,6 +64,7 @@ class Bento_Helper
 
     if (class_exists('WooCommerce')) {
       require_once 'inc/ajax.php';
+      require_once 'inc/orders.php';
     }
 
     require_once 'inc/admin.php';
