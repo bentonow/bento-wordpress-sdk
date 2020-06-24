@@ -29,29 +29,15 @@ class Bento_Custom
 
     wp_enqueue_script(
       'bento-js',
-      "https://app.bentonow.com/{$bento_site_key}.js",
+      "https://app.bentonow.com/{$bento_site_key}.js?woocommerce=1",
       [],
       false,
       true
     );
 
-    /**
-     * Enqueue scripts.
-     */
-    wp_enqueue_script(
-      'bento-wordpress-sdk-js',
-      plugins_url('assets/js/bento-wordpress-sdk.min.js', dirname(__FILE__)),
-      ['bento-js'],
-      $this->version,
-      true
-    );
     $params = $this->getBentoWordpressSDKJSParams();
 
-    wp_localize_script(
-      'bento-wordpress-sdk-js',
-      'bento_wordpress_sdk_params',
-      $params
-    );
+    wp_localize_script('bento-js', 'bento_wordpress_sdk_params', $params);
   }
 
   private function getBentoWordpressSDKJSParams()
