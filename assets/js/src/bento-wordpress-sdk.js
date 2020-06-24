@@ -75,7 +75,7 @@ const sendBentoEventWithCart = debounce(function (eventName) {
   };
 
   bento$.get(bento_wordpress_sdk_params.ajax_url, data, function (response) {
-    bento.track(eventName, JSON.parse(response));
+    bento.track(eventName, { cart: { items: JSON.parse(response) } });
   });
 }, 500);
 
