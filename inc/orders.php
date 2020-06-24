@@ -64,7 +64,6 @@ class Bento_Helper_Orders
   {
     $bento_options = get_option('bento_settings');
     $bento_site_key = $bento_options['bento_site_key'];
-    $base_currency = get_woocommerce_currency();
 
     if (empty($bento_site_key)) {
       return;
@@ -77,7 +76,7 @@ class Bento_Helper_Orders
     ];
 
     if (in_array($name, $this->eventsWithValue)) {
-      $details = $this->setEventValue($name, $details);
+      $details = $this->setEventValue($name, $details, $order);
     }
 
     $data = [
@@ -95,7 +94,7 @@ class Bento_Helper_Orders
     ]);
   }
 
-  private function setEventValue($name, $details)
+  private function setEventValue($name, $details, $order)
   {
     $amount = 0;
 
@@ -121,6 +120,8 @@ class Bento_Helper_Orders
 
   private function getOrderItems($order)
   {
+    $base_currency = get_woocommerce_currency();
+
     $line_items = $order->get_items();
     $items = [];
 
