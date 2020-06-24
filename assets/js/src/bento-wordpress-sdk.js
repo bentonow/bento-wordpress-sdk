@@ -89,17 +89,19 @@ const sendBentoEventWithCart = debounce(function (eventName) {
           if (cartIsEmpty) {
             cartIsEmpty = false;
             sendBentoEventWithCart('$woocommerceCartCreated');
+          } else {
+            sendBentoEventWithCart('$woocommerceCartUpdated');
           }
         });
 
         bento$(document.body).on(
-          'updated_cart_totals added_to_cart removed_from_cart',
+          'updated_cart_totals removed_from_cart',
           () => {
             sendBentoEventWithCart('$woocommerceCartUpdated');
           }
         );
 
-        if ($('.woocommerce-checkout').length > 0) {
+        if ($('form.woocommerce-checkout').length > 0) {
           sendBentoEventWithCart('$woocommerceStartedCheckout');
         }
 
