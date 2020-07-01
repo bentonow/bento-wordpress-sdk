@@ -7,9 +7,9 @@ class Bento_Helper_Orders
 {
   protected $apiUrl = 'https://app.bentonow.com';
   protected $eventsWithValue = [
-    '$woocommerceOrderPlaced',
-    '$woocommerceOrderCancelled',
-    '$woocommerceOrderRefunded',
+    '$OrderPlaced',
+    '$OrderCancelled',
+    '$OrderRefunded',
   ];
 
   /**
@@ -36,28 +36,28 @@ class Bento_Helper_Orders
   {
     $order = wc_get_order($order_id);
 
-    $this->sendEvent('$woocommerceOrderPlaced', $order);
+    $this->sendEvent('$OrderPlaced', $order);
   }
 
   public function send_order_shipped_event($order_id)
   {
     $order = wc_get_order($order_id);
 
-    $this->sendEvent('$woocommerceOrderShipped', $order);
+    $this->sendEvent('$OrderShipped', $order);
   }
 
   public function send_order_cancelled_event($order_id)
   {
     $order = wc_get_order($order_id);
 
-    $this->sendEvent('$woocommerceOrderCancelled', $order);
+    $this->sendEvent('$OrderCancelled', $order);
   }
 
   public function send_order_refunded_event($order_id)
   {
     $order = wc_get_order($order_id);
 
-    $this->sendEvent('$woocommerceOrderRefunded', $order);
+    $this->sendEvent('$OrderRefunded', $order);
   }
 
   private function sendEvent($name, $order)
@@ -98,11 +98,11 @@ class Bento_Helper_Orders
   {
     $amount = 0;
 
-    if ($name === '$woocommerceOrderPlaced') {
+    if ($name === '$OrderPlaced') {
       $amount = $order->get_total();
-    } elseif ($name === '$woocommerceOrderCancelled') {
+    } elseif ($name === '$OrderCancelled') {
       $amount = "-{$order->get_total()}";
-    } elseif ($name === '$woocommerceOrderRefunded') {
+    } elseif ($name === '$OrderRefunded') {
       $amount = "-{$order->get_total_refunded()}";
     }
 
