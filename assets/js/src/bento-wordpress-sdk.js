@@ -88,21 +88,21 @@ const sendBentoEventWithCart = debounce(function (eventName) {
         bento$(document.body).on('added_to_cart', () => {
           if (cartIsEmpty) {
             cartIsEmpty = false;
-            sendBentoEventWithCart('$woocommerceCartCreated');
+            sendBentoEventWithCart('$CartCreated');
           } else {
-            sendBentoEventWithCart('$woocommerceCartUpdated');
+            sendBentoEventWithCart('$CartUpdated');
           }
         });
 
         bento$(document.body).on(
           'updated_cart_totals removed_from_cart',
           () => {
-            sendBentoEventWithCart('$woocommerceCartUpdated');
+            sendBentoEventWithCart('$CartUpdated');
           }
         );
 
         if ($('form.woocommerce-checkout').length > 0) {
-          sendBentoEventWithCart('$woocommerceStartedCheckout');
+          sendBentoEventWithCart('$StartedCheckout');
         }
 
         /**
