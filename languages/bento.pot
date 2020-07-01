@@ -31,5 +31,5 @@ msgid "https://bentonow.com"
 msgstr ""
 
 #. Description of the plugin/theme
-msgid "TODO"
+msgid "Email marketing, live chat, and analytics for WooCommerce stores."
 msgstr ""
