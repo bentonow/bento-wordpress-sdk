@@ -96,7 +96,7 @@ class BentoSettingsPage
    */
   public function print_section_info()
   {
-    print 'You can find your site key here TODO';
+    print 'You can find your site key in your account dashboard. If you have trouble finding it, just ask support.';
   }
 
   /**
