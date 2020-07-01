@@ -21,10 +21,14 @@ class BentoSettingsPage
   public function add_plugin_page()
   {
     // This page will be under "Settings"
-    add_menu_page('Bento', 'Bento', 'manage_options', 'bento-setting-admin', [
-      $this,
-      'create_admin_page',
-    ]);
+    add_menu_page(
+      'Bento',
+      'Bento',
+      'manage_options',
+      'bento-setting-admin',
+      [$this, 'create_admin_page'],
+      plugin_dir_url(__DIR__) . 'assets/img/bento-logo-colour.png'
+    );
   }
 
   /**
