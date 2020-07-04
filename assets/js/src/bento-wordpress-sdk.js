@@ -11,7 +11,7 @@ const debounce = (func, delay) => {
 };
 
 const getCartHashKey = function () {
-  if (wc_cart_fragments_params) {
+  if (typeof wc_cart_fragments_params !== "undefined") {
     const cart_hash_key = wc_cart_fragments_params.cart_hash_key;
 
     try {
