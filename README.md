@@ -13,6 +13,10 @@ Track events, update data, record LTV and more. Data is stored in your Bento acc
 
 Download and install this package as a plugin, then add your site key. You're done! 
 
+## About Caching (Please Read)
+
+For now, Bento's script is personalized and dynamic meaning that it changes on every page load. This is necessary to power our on-page personalization engine and a lot of the magic that's under the hood. Please make sure you exclude your custom Bento.js script if you are using a caching plugin such as WP Rocket or SuperCache.
+
 ## Licence
 
 The Bento Helper is free software: you can redistribute it and/or modify
