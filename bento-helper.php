@@ -9,8 +9,8 @@
  * Text Domain: bentonow
  * WC requires at least: 2.6.0
  * WC tested up to: 4.2.0.
- * License: GPL2
- * The Bento Helper is free software: you can redistribute it and/or modify the codebase freely. 
+ * License: GPLv2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 class Bento_Helper
 {
