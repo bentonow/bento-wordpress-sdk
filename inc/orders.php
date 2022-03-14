@@ -17,19 +17,88 @@ class Bento_Helper_Orders
    */
   public function __construct()
   {
+     // These are standard WooCommerce hooks
+    // https://woocommerce.com/document/subscriptions/develop/action-reference/
     add_action('woocommerce_thankyou', [$this, 'send_order_placed_event']);
+    
     add_action('woocommerce_order_status_completed', [
       $this,
       'send_order_shipped_event',
     ]);
+    
     add_action('woocommerce_order_status_cancelled', [
       $this,
       'send_order_cancelled_event',
     ]);
+    
     add_action('woocommerce_order_refunded', [
       $this,
       'send_order_refunded_event',
     ]);
+
+    // These are WooCommerce Subscription hooks
+    // https://woocommerce.com/document/subscriptions/develop/action-reference/
+    add_action('woocommerce_checkout_subscription_created', [
+      $this,
+      'send_checkout_subscription_created_event',
+    ]);
+
+    add_action('woocommerce_subscription_status_active', [
+      $this,
+      'send_woocommerce_subscription_status_active_event',
+    ]);
+
+    add_action('woocommerce_subscription_status_cancelled', [
+      $this,
+      'send_woocommerce_subscription_status_cancelled_event',
+    ]);
+
+    add_action('woocommerce_subscription_status_expired', [
+      $this,
+      'send_woocommerce_subscription_status_expired_event',
+    ]);
+
+    add_action('woocommerce_subscription_status_on-hold', [
+      $this,
+      'send_woocommerce_subscription_status_on_hold_event',
+    ]);
+
+    add_action('woocommerce_scheduled_subscription_trial_end-hold', [
+      $this,
+      'send_woocommerce_scheduled_subscription_trial_end_event',
+    ]);
+
+  }
+
+  public function send_woocommerce_scheduled_subscription_trial_end_event($subscription)
+  {
+    $this->sendSubscriptionEvent('$SubscriptionTrialEnded', $subscription);
+  }
+
+  public function send_woocommerce_subscription_status_on_hold_event($subscription)
+  {
+    $this->sendSubscriptionEvent('$SubscriptionOnHold', $subscription);
+  }
+
+  public function send_woocommerce_subscription_status_expired_event($subscription)
+  {
+    $this->sendSubscriptionEvent('$SubscriptionExpired', $subscription);
+  }
+
+  public function send_woocommerce_subscription_status_cancelled_event($subscription)
+  {
+    $this->sendSubscriptionEvent('$SubscriptionCancelled', $subscription);
+  }
+
+  public function send_woocommerce_subscription_status_active_event($subscription)
+  {
+    $order = 
+    $this->sendSubscriptionEvent('$SubscriptionActive', $subscription);
+  }
+
+  public function send_checkout_subscription_created_event($subscription, $order, $recurring_cart)
+  {
+    $this->sendEvent('$SubscriptionCreated', $order);
   }
 
   public function send_order_placed_event($order_id)
@@ -58,6 +127,40 @@ class Bento_Helper_Orders
     $order = wc_get_order($order_id);
 
     $this->sendEvent('$OrderRefunded', $order);
+  }
+
+  private function sendSubscriptionEvent($name, $subscription)
+  {
+    $bento_options = get_option('bento_settings');
+    $bento_site_key = $bento_options['bento_site_key'];
+
+    if (empty($bento_site_key)) {
+      return;
+    }
+
+    // $details = [
+    //  'cart' => [
+    //    'items' => $this->getOrderItems($subscription),
+    // ],
+    // ];
+
+    // if (in_array($name, $this->eventsWithValue)) {
+    //  $details = $this->setEventValue($name, $details, $order);
+    // }
+
+    $data = [
+      'site' => $bento_site_key,
+      'type' => $name,
+      'email' => $subscription->get_billing_email(),
+      'details' => $details,
+    ];
+
+    $response = wp_remote_post($this->apiUrl . '/tracking/generic', [
+      'headers' => ['Content-Type' => 'application/json; charset=utf-8'],
+      'body' => json_encode($data),
+      'method' => 'POST',
+      'data_format' => 'body',
+    ]);
   }
 
   private function sendEvent($name, $order)
