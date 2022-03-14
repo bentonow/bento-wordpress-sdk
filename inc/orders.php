@@ -38,35 +38,12 @@ class Bento_Helper_Orders
 
     // These are WooCommerce Subscription hooks
     // https://woocommerce.com/document/subscriptions/develop/action-reference/
-    add_action('woocommerce_checkout_subscription_created', [
-      $this,
-      'send_checkout_subscription_created_event',
-    ]);
-
-    add_action('woocommerce_subscription_status_active', [
-      $this,
-      'send_woocommerce_subscription_status_active_event',
-    ]);
-
-    add_action('woocommerce_subscription_status_cancelled', [
-      $this,
-      'send_woocommerce_subscription_status_cancelled_event',
-    ]);
-
-    add_action('woocommerce_subscription_status_expired', [
-      $this,
-      'send_woocommerce_subscription_status_expired_event',
-    ]);
-
-    add_action('woocommerce_subscription_status_on-hold', [
-      $this,
-      'send_woocommerce_subscription_status_on_hold_event',
-    ]);
-
-    add_action('woocommerce_scheduled_subscription_trial_end-hold', [
-      $this,
-      'send_woocommerce_scheduled_subscription_trial_end_event',
-    ]);
+    add_action('woocommerce_checkout_subscription_created', 'send_checkout_subscription_created_event');
+    add_action('woocommerce_subscription_status_active', 'send_woocommerce_subscription_status_active_event');
+    add_action('woocommerce_subscription_status_cancelled', 'send_woocommerce_subscription_status_cancelled_event');
+    add_action('woocommerce_subscription_status_expired', 'send_woocommerce_subscription_status_expired_event');
+    add_action('woocommerce_subscription_status_on-hold', 'send_woocommerce_subscription_status_on_hold_event');
+    add_action('woocommerce_scheduled_subscription_trial_end-hold', 'send_woocommerce_scheduled_subscription_trial_end_event');
 
   }
 
