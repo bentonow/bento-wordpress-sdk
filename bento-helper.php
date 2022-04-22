@@ -72,6 +72,10 @@ class Bento_Helper
     require_once 'inc/admin.php';
     require_once 'inc/custom.php';
 
+    // load events controllers
+    require_once 'inc/class-bento-events-controller.php';
+    Bento_Events_Controller::init();
+
     // Plugin textdomain
     load_plugin_textdomain(
       'bento',
