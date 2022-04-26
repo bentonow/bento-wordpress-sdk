@@ -13,6 +13,52 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 	 */
 	class Bento_Events_Controller {
 		const BENTO_API_EVENT_ENDPOINT = 'https://app.bentonow.com/tracking/generic';
+		const EVENTS_QUEUE_OPTION_KEY  = 'bento_events_queue';
+
+		/**
+		 * Bento configuration options
+		 *
+		 * @var array
+		 */
+		private static $bento_options = array();
+
+		/**
+		 * Get a Bento configuration option
+		 *
+		 * @param string $option_name The option name.
+		 * @return mixed The option value.
+		 */
+		public static function get_bento_option( $option_name ) {
+			if ( empty( self::$bento_options ) ) {
+				self::$bento_options = get_option( 'bento_settings' );
+			}
+			return self::$bento_options[ $option_name ] ?? null;
+		}
+
+		/**
+		 * Enqueue an event to Bento.
+		 *
+		 * @param int    $user_id The user ID that generates the event.
+		 * @param string $type The event type.
+		 * @param string $email The email event is for.
+		 * @param array  $details The event details.
+		 */
+		protected function enqueue_event( $user_id, $type, $email, $details = array() ) {
+			if ( empty( self::get_bento_option( 'bento_events_recurrence' ) ) ) {
+				delete_option( self::EVENTS_QUEUE_OPTION_KEY );
+				return;
+			}
+
+			$events_queue   = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
+			$events_queue[] = array(
+				'user_id' => $user_id,
+				'type'    => $type,
+				'email'   => $email,
+				'details' => $details,
+			);
+			update_option( self::EVENTS_QUEUE_OPTION_KEY, $events_queue );
+		}
+
 		/**
 		 * Send an event to Bento.
 		 *
@@ -22,7 +68,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * @param array  $details The event details.
 		 * @return bool True if event was sent successfully.
 		 */
-		protected function send_event( $user_id, $type, $email, $details = array() ) {
+		private function send_event( $user_id, $type, $email, $details = array() ) {
 			$bento_options  = get_option( 'bento_settings' );
 			$bento_site_key = $bento_options['bento_site_key'];
 

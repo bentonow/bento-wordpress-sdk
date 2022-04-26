@@ -28,7 +28,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 		 * @return void
 		 */
 		public function learndash_course_completed_event( $course_data ) {
-			$this->send_event(
+			$this->enqueue_event(
 				$course_data['user']->ID,
 				'learndash_course_completed',
 				$course_data['user']->user_email,

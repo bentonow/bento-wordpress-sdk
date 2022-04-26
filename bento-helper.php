@@ -69,7 +69,7 @@ class Bento_Helper
       require_once 'inc/orders.php';
     }
 
-    require_once 'inc/admin.php';
+    require_once 'inc/class-bentosettingspage.php';
     require_once 'inc/custom.php';
 
     // load events controllers
@@ -78,7 +78,7 @@ class Bento_Helper
 
     // Plugin textdomain
     load_plugin_textdomain(
-      'bento',
+      'bentonow',
       false,
       basename(dirname(__FILE__)) . '/languages/'
     );
