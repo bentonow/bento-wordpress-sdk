@@ -21,7 +21,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			add_action(
 				'learndash_course_completed',
 				function( $ld_data ) {
-					$this->enqueue_event(
+					self::enqueue_event(
 						$ld_data['user']->ID,
 						'learndash_course_completed',
 						$ld_data['user']->user_email,
@@ -37,7 +37,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			add_action(
 				'learndash_lesson_completed',
 				function( $ld_data ) {
-					$this->enqueue_event(
+					self::enqueue_event(
 						$ld_data['user']->ID,
 						'learndash_lesson_completed',
 						$ld_data['user']->user_email,
@@ -55,7 +55,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			add_action(
 				'learndash_topic_completed',
 				function( $ld_data ) {
-					$this->enqueue_event(
+					self::enqueue_event(
 						$ld_data['user']->ID,
 						'learndash_topic_completed',
 						$ld_data['user']->user_email,
@@ -75,7 +75,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			add_action(
 				'learndash_quiz_completed',
 				function( $quizdata, $wp_user ) {
-					$this->enqueue_event(
+					self::enqueue_event(
 						$wp_user->ID,
 						'learndash_quiz_completed',
 						$wp_user->user_email,

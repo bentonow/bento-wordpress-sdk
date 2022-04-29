@@ -103,6 +103,7 @@ class Bento_Helper {
 	public static function deactivate() {
 		// remove cron jobs.
 		Bento_Events_Controller::unschedule_bento_events_cron();
+		WP_Bento_Events::unschedule_bento_wp_cron();
 	}
 
 	/**

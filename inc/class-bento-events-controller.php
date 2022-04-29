@@ -44,7 +44,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * @param string $email The email event is for.
 		 * @param array  $details The event details.
 		 */
-		protected function enqueue_event( $user_id, $type, $email, $details = array() ) {
+		protected static function enqueue_event( $user_id, $type, $email, $details = array() ) {
 			if ( empty( self::get_bento_option( 'bento_events_recurrence' ) ) ) {
 				delete_option( self::EVENTS_QUEUE_OPTION_KEY );
 				return;
@@ -148,7 +148,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		public static function init() {
 			add_action( 'init', array( __CLASS__, 'load_events_controllers' ) );
 
-			// Add a cron job to send events to Bento.
+			// add cron job to send events to Bento.
 			add_filter( 'cron_schedules', array( __CLASS__, 'add_events_cron_interval' ) ); // phpcs:ignore WordPress.WP.CronInterval
 			add_action( 'bento_send_events_hook', array( __CLASS__, 'bento_send_events_hook' ) );
 			if ( ! wp_next_scheduled( 'bento_send_events_hook' ) ) {
@@ -160,8 +160,8 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * Unschedule the Bento events cron job. Used when the plugin is deactivated.
 		 */
 		public static function unschedule_bento_events_cron() {
-			$timestamp = wp_next_scheduled( 'bento_send_events_hook' );
-			wp_unschedule_event( $timestamp, 'bento_send_events_hook' );
+			$send_events_timestamp = wp_next_scheduled( 'bento_send_events_hook' );
+			wp_unschedule_event( $send_events_timestamp, 'bento_send_events_hook' );
 		}
 
 		/**
@@ -176,10 +176,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function bento_send_events_hook() {
 			if ( self::is_sending_events() ) {
-				WP_DEBUG && error_log( 'Bento is already sending events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				WP_DEBUG && error_log( '[Bento] - Bento is already sending events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				return; // Already sending events.
 			}
-			WP_DEBUG && error_log( 'Sending Bento events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			WP_DEBUG && error_log( '[Bento] - Sending Bento events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 			// set the transient to true so we know we're sending events.
 			set_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY, true, HOUR_IN_SECONDS * 6 );
@@ -188,7 +188,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			$new_events_queue = array();
 			foreach ( $events_queue as $event ) {
 				$event_status = self::send_event( $event['user_id'], $event['type'], $event['email'], $event['details'] );
-				WP_DEBUG && error_log( 'Bento event "' . $event['type'] . '" sended. Status: ' . $event_status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				WP_DEBUG && error_log( '[Bento] - Bento event "' . $event['type'] . '" sended. Status: ' . $event_status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				if ( ! $event_status ) {
 					// event was not sent successfully.
 					$new_events_queue[] = $event;
@@ -205,7 +205,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 			// finish sending events.
 			delete_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY );
-			WP_DEBUG && error_log( 'Bento events sended.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			WP_DEBUG && error_log( '[Bento] - Bento events sended.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**
@@ -232,6 +232,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function load_events_controllers() {
 			$controllers = array(
+				'class-wp-bento-events',
 				'class-learndash-bento-events',
 			);
 
