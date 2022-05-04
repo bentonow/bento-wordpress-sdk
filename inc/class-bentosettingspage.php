@@ -137,14 +137,14 @@ class BentoSettingsPage {
 		);
 
 		add_settings_field(
-			'bento_events_user_not_complete_content', // ID.
-			esc_html__( 'Send "user not complete content" events after (days)', 'bentonow' ), // Title.
+			'bento_events_user_not_completed_content', // ID.
+			esc_html__( 'Send "user not completed content" events after (days)', 'bentonow' ), // Title.
 			array( $this, 'bento_setting_field_callback' ), // Callback.
 			'bento-setting-admin', // Page.
 			'bento_setting_section_events_sender', // Section.
 			array(
-				'id'         => 'bento_events_user_not_complete_content',
-				'value'      => $this->options['bento_events_user_not_complete_content'] ?? 5,
+				'id'         => 'bento_events_user_not_completed_content',
+				'value'      => $this->options['bento_events_user_not_completed_content'] ?? 5,
 				'type'       => 'number',
 				'attributes' => array(
 					'min' => 0,
@@ -190,8 +190,8 @@ class BentoSettingsPage {
 			$new_input['bento_events_user_not_logged'] = absint( sanitize_text_field( $input['bento_events_user_not_logged'] ) );
 		}
 
-		if ( isset( $input['bento_events_user_not_complete_content'] ) ) {
-			$new_input['bento_events_user_not_complete_content'] = absint( sanitize_text_field( $input['bento_events_user_not_complete_content'] ) );
+		if ( isset( $input['bento_events_user_not_completed_content'] ) ) {
+			$new_input['bento_events_user_not_completed_content'] = absint( sanitize_text_field( $input['bento_events_user_not_completed_content'] ) );
 		}
 
 		if ( isset( $input['bento_events_repeat_not_event'] ) ) {
