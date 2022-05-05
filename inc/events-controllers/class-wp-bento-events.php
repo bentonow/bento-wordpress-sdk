@@ -54,7 +54,6 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 				foreach ( $users as $user ) {
 					$last_event_sent = get_user_meta( $user->ID, self::BENTO_LAST_LOGIN_EVENT_SENT_META_KEY, true );
 					if ( ! empty( $last_event_sent ) && ( empty( $bento_repeat_not_events ) || $last_event_sent > strtotime( "-$bento_repeat_not_events day" ) ) ) {
-						WP_DEBUG && error_log( '[Bento] - Not-logged event already sent for user ' . $user->ID ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 						continue;
 					}
 

@@ -23,8 +23,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			// add cron job to send scheduled events.
 			add_action( 'bento_learndash_scheduled_events_hook', array( __CLASS__, 'bento_learndash_scheduled_events_hook' ) );
 			if ( ! wp_next_scheduled( 'bento_learndash_scheduled_events_hook' ) ) {
-				// wp_schedule_event( time(), 'hourly', 'bento_learndash_scheduled_events_hook' );
-				wp_schedule_event( time(), 'bento_send_events_interval', 'bento_learndash_scheduled_events_hook' );
+				wp_schedule_event( time(), 'hourly', 'bento_learndash_scheduled_events_hook' );
 			}
 
 			add_action(
@@ -100,17 +99,146 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 							'percentage'          => $quizdata['percentage'],
 							'timespent'           => $quizdata['timespent'],
 							'has_graded'          => $quizdata['has_graded'],
-							'course_id'           => ! empty( $quizdata['course'] ) ? $quizdata['course']->ID : 0,
-							'course_name'         => ! empty( $quizdata['course'] ) ? $quizdata['course']->post_title : '',
-							'lesson_id'           => ! empty( $quizdata['lesson'] ) ? $quizdata['lesson']->ID : 0,
-							'lesson_name'         => ! empty( $quizdata['lesson'] ) ? $quizdata['lesson']->post_title : '',
-							'topic_id'            => ! empty( $quizdata['topic'] ) ? $quizdata['topic']->ID : 0,
-							'topic_name'          => ! empty( $quizdata['topic'] ) ? $quizdata['topic']->post_title : '',
+							'course_id'           => ! empty( $quizdata['course'] ) ? $quizdata['course']->ID ?? 0 : 0,
+							'course_name'         => ! empty( $quizdata['course'] ) ? $quizdata['course']->post_title ?? '' : '',
+							'lesson_id'           => ! empty( $quizdata['lesson'] ) ? $quizdata['lesson']->ID ?? 0 : 0,
+							'lesson_name'         => ! empty( $quizdata['lesson'] ) ? $quizdata['lesson']->post_title ?? '' : '',
+							'topic_id'            => ! empty( $quizdata['topic'] ) ? $quizdata['topic']->ID ?? 0 : 0,
+							'topic_name'          => ! empty( $quizdata['topic'] ) ? $quizdata['topic']->post_title ?? '' : '',
 						)
 					);
 				},
 				10,
 				2
+			);
+
+			// user earned a new certificate.
+			add_action(
+				'learndash_course_completed',
+				function( $ld_data ) {
+					$certificate_link = learndash_get_course_certificate_link( $ld_data['course']->ID, $ld_data['user']->ID );
+					if ( ! empty( $certificate_link ) ) {
+						$this->send_user_earned_new_certificate_event(
+							$ld_data['user']->ID,
+							$ld_data['user']->user_email,
+							array(
+								'course_id'        => $ld_data['course']->ID,
+								'course_name'      => $ld_data['course']->post_title,
+								'certificate_link' => $certificate_link,
+							)
+						);
+					}
+				}
+			);
+			add_action(
+				'learndash_quiz_completed',
+				function( $quizdata, $wp_user ) {
+					$certificate_link = learndash_get_certificate_link( $quizdata['quiz'], $wp_user->ID );
+					if ( ! empty( $certificate_link ) ) {
+						$this->send_user_earned_new_certificate_event(
+							$wp_user->ID,
+							$wp_user->user_email,
+							array(
+								'course_id'        => ! empty( $quizdata['course'] ) ? $quizdata['course']->ID : 0,
+								'course_name'      => ! empty( $quizdata['course'] ) ? $quizdata['course']->post_title : '',
+								'quiz_id'          => $quizdata['quiz'],
+								'quiz_name'        => get_the_title( $quizdata['quiz'] ),
+								'certificate_link' => $certificate_link,
+							)
+						);
+					}
+				},
+				10,
+				2
+			);
+
+			// user essay has been graded.
+			add_action(
+				'learndash_essay_all_quiz_data_updated',
+				function( $quiz_id, $question_id, $updated_scoring_data, $essay_post ) {
+					if ( 'graded' !== $essay_post->post_status || intval( $updated_scoring_data['score_difference'] ) <= 0 ) {
+						return; // essay is not graded or event already sent.
+					}
+					self::enqueue_event(
+						$essay_post->post_author,
+						'learndash_essay_graded',
+						get_userdata( $essay_post->post_author )->user_email,
+						array(
+							'quiz_id'                   => $quiz_id,
+							'quiz_name'                 => get_the_title( $quiz_id ),
+							'question_id'               => $question_id,
+							'updated_question_score'    => $updated_scoring_data['updated_question_score'],
+							'points_awarded_difference' => $updated_scoring_data['points_awarded_difference'],
+						)
+					);
+				},
+				10,
+				4
+			);
+
+			// users assignment has been graded.
+			add_action(
+				'learndash_assignment_approved',
+				function( $assignment_id ) {
+					$assignment = get_post( $assignment_id );
+					$course_id  = get_post_meta( $assignment_id, 'course_id', true );
+					self::enqueue_event(
+						$assignment->post_author,
+						'learndash_assignment_approved',
+						get_userdata( $assignment->post_author )->user_email,
+						array(
+							'assignment_id'   => $assignment_id,
+							'assignment_name' => $assignment->post_title,
+							'course_id'       => $course_id,
+							'course_name'     => get_the_title( $course_id ),
+						)
+					);
+				}
+			);
+
+			// users assignment has a new comment.
+			add_action(
+				'comment_post',
+				function( $comment_id, $comment_approved, $commentdata ) {
+					$post_type = get_post_type( $commentdata['comment_post_ID'] );
+					if ( learndash_get_post_type_slug( 'assignment' ) === $post_type ) {
+						$course_id = get_post_meta( $commentdata['comment_post_ID'], 'course_id', true );
+						self::enqueue_event(
+							$commentdata['user_id'],
+							'learndash_assignment_new_comment',
+							get_userdata( $commentdata['user_id'] )->user_email,
+							array(
+								'assignment_id'        => $commentdata['comment_post_ID'],
+								'assignment_name'      => get_the_title( $commentdata['comment_post_ID'] ),
+								'course_id'            => $course_id,
+								'course_name'          => get_the_title( $course_id ),
+								'comment_id'           => $comment_id,
+								'comment_author'       => $commentdata['comment_author'],
+								'comment_content'      => $commentdata['comment_content'],
+								'comment_author_email' => $commentdata['comment_author_email'],
+								'comment_approved'     => $comment_approved,
+							)
+						);
+					}
+				},
+				10,
+				3
+			);
+		}
+
+		/**
+		 * Send the user earned a new certificate event.
+		 *
+		 * @param int    $user_id User ID.
+		 * @param string $user_email User email.
+		 * @param array  $event_details Event details.
+		 */
+		private function send_user_earned_new_certificate_event( $user_id, $user_email, $event_details ) {
+			self::enqueue_event(
+				$user_id,
+				'learndash_user_earned_new_certificate',
+				$user_email,
+				$event_details
 			);
 		}
 
@@ -333,21 +461,21 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 											}
 
 											if ( $users_should_send_events[ $user_id ] ) {
-												self::enqueue_event(
-													$user_id,
-													'learndash_quiz_not_completed',
-													get_userdata( $user_id )->user_email,
-													array(
-														'quiz_id'  => $topic_quiz->ID,
-														'quiz_name' => $topic_quiz->post_title,
-														'topic_id' => $topic->ID,
-														'topic_name' => $topic->post_title,
-														'lesson_id' => $lesson->ID,
-														'lesson_name' => $lesson->post_title,
-														'course_id' => $course->ID,
-														'course_name' => $course->post_title,
-													)
-												);
+													self::enqueue_event(
+														$user_id,
+														'learndash_quiz_not_completed',
+														get_userdata( $user_id )->user_email,
+														array(
+															'quiz_id'  => $topic_quiz->ID,
+															'quiz_name' => $topic_quiz->post_title,
+															'topic_id' => $topic->ID,
+															'topic_name' => $topic->post_title,
+															'lesson_id' => $lesson->ID,
+															'lesson_name' => $lesson->post_title,
+															'course_id' => $course->ID,
+															'course_name' => $course->post_title,
+														)
+													);
 											} // end topic quizzes.
 										}
 									} // end topics.
@@ -369,19 +497,19 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 											}
 
 											if ( $users_should_send_events[ $user_id ] ) {
-												self::enqueue_event(
-													$user_id,
-													'learndash_quiz_not_completed',
-													get_userdata( $user_id )->user_email,
-													array(
-														'quiz_id' => $lesson_quiz->ID,
-														'quiz_name' => $lesson_quiz->post_title,
-														'lesson_id' => $lesson->ID,
-														'lesson_name' => $lesson->post_title,
-														'course_id' => $course->ID,
-														'course_name' => $course->post_title,
-													)
-												);
+													self::enqueue_event(
+														$user_id,
+														'learndash_quiz_not_completed',
+														get_userdata( $user_id )->user_email,
+														array(
+															'quiz_id' => $lesson_quiz->ID,
+															'quiz_name' => $lesson_quiz->post_title,
+															'lesson_id' => $lesson->ID,
+															'lesson_name' => $lesson->post_title,
+															'course_id' => $course->ID,
+															'course_name' => $course->post_title,
+														)
+													);
 											} // end lesson quizzes.
 										}
 									} // end lesson quizzes.
@@ -437,7 +565,6 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 		private static function should_send_not_completed_event( $user_id, $bento_repeat_not_events ) {
 			$last_event_sent = get_user_meta( $user_id, self::BENTO_LAST_NOT_COMPLETED_EVENT_SENT_META_KEY, true );
 			if ( ! empty( $last_event_sent ) && ( empty( $bento_repeat_not_events ) || $last_event_sent > strtotime( "-$bento_repeat_not_events day" ) ) ) {
-				WP_DEBUG && error_log( '[Bento] - Not-completed event already sent for user ' . $user_id ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				return false;
 			}
 			return true;
