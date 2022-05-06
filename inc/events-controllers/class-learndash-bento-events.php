@@ -224,6 +224,85 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 				10,
 				3
 			);
+
+			// user enrolls in a course.
+			add_action(
+				'learndash_update_course_access',
+				function( $user_id, $course_id, $course_access_list, $remove ) {
+					if ( ! $remove ) {
+						self::enqueue_event(
+							$user_id,
+							'learndash_user_enrolled_in_course',
+							get_userdata( $user_id )->user_email,
+							array(
+								'course_id'   => $course_id,
+								'course_name' => get_the_title( $course_id ),
+							)
+						);
+					}
+				},
+				10,
+				4
+			);
+
+			// user enrolls in a group.
+			add_action(
+				'ld_added_group_access',
+				function( $user_id, $group_id ) {
+					self::enqueue_event(
+						$user_id,
+						'learndash_user_enrolled_in_group',
+						get_userdata( $user_id )->user_email,
+						array(
+							'group_id'   => $group_id,
+							'group_name' => get_the_title( $group_id ),
+						)
+					);
+				},
+				10,
+				2
+			);
+
+			// users buys a course/group.
+			add_action(
+				'learndash_transaction_created',
+				function( $transaction_id ) {
+					if ( is_null( get_post( $transaction_id ) ) ) {
+						return;
+					}
+
+					$post_id = get_post_meta( $transaction_id, 'post_id', true );
+					$user_id = get_post_meta( $transaction_id, 'user_id', true );
+					if ( is_null( $post_id ) || is_null( $user_id ) ) {
+						return;
+					}
+
+					$post_type = get_post_type( $post_id );
+					if ( learndash_get_post_type_slug( 'course' ) === $post_type ) {
+						self::enqueue_event(
+							$user_id,
+							'learndash_user_purchased_course',
+							get_userdata( $user_id )->user_email,
+							array(
+								'course_id'   => $post_id,
+								'course_name' => get_the_title( $post_id ),
+							)
+						);
+					} elseif ( learndash_get_post_type_slug( 'group' ) === $post_type ) {
+						self::enqueue_event(
+							$user_id,
+							'learndash_user_purchased_group',
+							get_userdata( $user_id )->user_email,
+							array(
+								'group_id'   => $post_id,
+								'group_name' => get_the_title( $post_id ),
+							)
+						);
+					}
+
+				}
+			);
+
 		}
 
 		/**
