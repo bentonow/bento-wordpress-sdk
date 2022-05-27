@@ -12,110 +12,133 @@
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
-class Bento_Helper
-{
-  /**
-   * Current version of Bento.
-   */
-  public $version = '1.0.1';
+class Bento_Helper {
 
-  /**
-   * URL dir for plugin.
-   */
-  public $url;
+	/**
+	 * Current version of Bento.
+	 *
+	 * @var string
+	 */
+	public $version = '1.0.1';
 
-  /**
-   * The single instance of the class.
-   */
-  protected static $_instance = null;
+	/**
+	 * URL dir for plugin.
+	 *
+	 * @var string
+	 */
+	public $url;
 
-  /**
-   * Main Bento Helper Instance.
-   *
-   * Ensures only one instance of the Bento Helper is loaded or can be loaded.
-   *
-   * @return Bento Helper - Main instance.
-   */
-  public static function instance()
-  {
-    if (is_null(self::$_instance)) {
-      self::$_instance = new self();
-    }
+	/**
+	 * The single instance of the class.
+	 *
+	 * @var object
+	 */
+	protected static $instance = null;
 
-    return self::$_instance;
-  }
+	/**
+	 * Main Bento Helper Instance.
+	 *
+	 * Ensures only one instance of the Bento Helper is loaded or can be loaded.
+	 *
+	 * @return Bento Helper - Main instance.
+	 */
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
 
-  /**
-   * Constructor.
-   */
-  public function __construct()
-  {
-    add_action('plugins_loaded', [$this, 'init']);
+		return self::$instance;
+	}
 
-    // Set URL
-    $this->url = plugin_dir_url(__FILE__);
-  }
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		add_action( 'plugins_loaded', array( $this, 'init' ) );
 
-  /**
-   * Start plugin.
-   */
-  public function init()
-  {
-    // Activate notice (shown once)
-    add_action('admin_notices', [$this, 'activate_notice']);
+		// Set URL.
+		$this->url = plugin_dir_url( __FILE__ );
+	}
 
-    if (class_exists('WooCommerce')) {
-      require_once 'inc/ajax.php';
-      require_once 'inc/orders.php';
-    }
+	/**
+	 * Start plugin.
+	 */
+	public function init() {
+		// Activate notice (shown once).
+		add_action( 'admin_notices', array( $this, 'activate_notice' ) );
 
-    require_once 'inc/admin.php';
-    require_once 'inc/custom.php';
+		if ( class_exists( 'WooCommerce' ) ) {
+			require_once 'inc/ajax.php';
+			require_once 'inc/orders.php';
+		}
 
-    // Plugin textdomain
-    load_plugin_textdomain(
-      'bento',
-      false,
-      basename(dirname(__FILE__)) . '/languages/'
-    );
-  }
+		require_once 'inc/class-bentosettingspage.php';
+		require_once 'inc/custom.php';
 
-  /**
-   * Run on activation.
-   */
-  public static function activate()
-  {
-    // Set Bento's show activation notice option to true if it isn't already false (only first time)
-    if (get_option('bento_show_activation_notice', true)) {
-      update_option('bento_show_activation_notice', true);
-    }
-  }
+		// load events controllers only if LearnDash is active.
+		if ( defined( 'LEARNDASH_VERSION' ) ) {
+			require_once 'inc/class-bento-events-controller.php';
+			Bento_Events_Controller::init();
+		}
 
-  /**
-   * Activate notice (if we should).
-   */
-  public function activate_notice()
-  {
-    if (get_option('bento_show_activation_notice', false)) {
-      echo '<div class="notice notice-success"><p>' .
-        sprintf(__('The Bento Wordpress SDK is active!')) .
-        '</p></div>';
+		// Plugin textdomain.
+		load_plugin_textdomain(
+			'bentonow',
+			false,
+			basename( dirname( __FILE__ ) ) . '/languages/'
+		);
+	}
 
-      // Disable notice option
-      update_option('bento_show_activation_notice', false);
-    }
-  }
+	/**
+	 * Run on activation.
+	 */
+	public static function activate() {
+		// Set Bento's show activation notice option to true if it isn't already false (only first time).
+		if ( get_option( 'bento_show_activation_notice', true ) ) {
+			update_option( 'bento_show_activation_notice', true );
+		}
+	}
+
+	/**
+	 * Run on deactivation.
+	 */
+	public static function deactivate() {
+		// remove cron jobs.
+		if ( class_exists( 'Bento_Events_Controller' ) ) {
+			Bento_Events_Controller::remove_cron_jobs();
+		}
+		if ( class_exists( 'WP_Bento_Events' ) ) {
+			WP_Bento_Events::remove_cron_jobs();
+		}
+		if ( class_exists( 'LearnDash_Bento_Events' ) ) {
+			LearnDash_Bento_Events::remove_cron_jobs();
+		}
+	}
+
+	/**
+	 * Activate notice (if we should).
+	 */
+	public function activate_notice() {
+		if ( get_option( 'bento_show_activation_notice', false ) ) {
+			echo '<div class="notice notice-success"><p>' .
+			sprintf( __( 'The Bento WordPress SDK is active!' ) ) .
+			'</p></div>';
+
+			// Disable notice option.
+			update_option( 'bento_show_activation_notice', false );
+		}
+	}
 }
 
-// Notice after it's been activated
-register_activation_hook(__FILE__, ['Bento_Helper', 'activate']);
+// Notice after it's been activated.
+register_activation_hook( __FILE__, array( 'Bento_Helper', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'Bento_Helper', 'deactivate' ) );
 
 /**
  * For plugin-wide access to initial instance.
  */
-function Bento_Helper()
-{
-  return Bento_Helper::instance();
+function bento_helper() {
+	return Bento_Helper::instance();
 }
 
-Bento_Helper();
+bento_helper();
