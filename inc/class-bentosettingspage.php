@@ -93,82 +93,87 @@ class BentoSettingsPage {
 			)
 		);
 
-		add_settings_section(
-			'bento_setting_section_events_sender', // ID.
-			esc_html__( 'Configure Bento Events Sender', 'bentonow' ), // Title.
-			function() {
-				echo '<p>' . esc_html__( 'Configure how to send events for Bento. Use zero to disable an option.', 'bentonow' ) . '</p>';
-			}, // Callback.
-			'bento-setting-admin' // Page.
-		);
+		// show cron settings only if LearnDash is active.
+		if ( defined( 'LEARNDASH_VERSION' ) ) {
 
-		add_settings_field(
-			'bento_events_recurrence', // ID.
-			esc_html__( 'Send events for Bento each (minutes)', 'bentonow' ), // Title.
-			array( $this, 'bento_setting_field_callback' ), // Callback.
-			'bento-setting-admin', // Page.
-			'bento_setting_section_events_sender', // Section.
-			array(
-				'id'         => 'bento_events_recurrence',
-				'value'      => $this->options['bento_events_recurrence'] ?? 1,
-				'type'       => 'number',
-				'attributes' => array(
-					'min' => 0,
-					'max' => 60,
-				),
-			)
-		);
+			add_settings_section(
+				'bento_setting_section_events_sender', // ID.
+				esc_html__( "Configure Bento's LearnDash Background Events Sender", 'bentonow' ), // Title.
+				function() {
+					echo '<p>' . esc_html__( 'Configure how to send events for Bento. Use zero to disable an option.', 'bentonow' ) . '</p>';
+				}, // Callback.
+				'bento-setting-admin' // Page.
+			);
 
-		add_settings_field(
-			'bento_events_user_not_logged', // ID.
-			esc_html__( 'Send "user not logged" events after (days)', 'bentonow' ), // Title.
-			array( $this, 'bento_setting_field_callback' ), // Callback.
-			'bento-setting-admin', // Page.
-			'bento_setting_section_events_sender', // Section.
-			array(
-				'id'         => 'bento_events_user_not_logged',
-				'value'      => $this->options['bento_events_user_not_logged'] ?? 5,
-				'type'       => 'number',
-				'attributes' => array(
-					'min' => 0,
-					'max' => 360,
-				),
-			)
-		);
+			add_settings_field(
+				'bento_events_recurrence', // ID.
+				esc_html__( 'Send events for Bento each (minutes)', 'bentonow' ), // Title.
+				array( $this, 'bento_setting_field_callback' ), // Callback.
+				'bento-setting-admin', // Page.
+				'bento_setting_section_events_sender', // Section.
+				array(
+					'id'         => 'bento_events_recurrence',
+					'value'      => $this->options['bento_events_recurrence'] ?? 1,
+					'type'       => 'number',
+					'attributes' => array(
+						'min' => 0,
+						'max' => 60,
+					),
+				)
+			);
 
-		add_settings_field(
-			'bento_events_user_not_completed_content', // ID.
-			esc_html__( 'Send "user not completed content" events after (days)', 'bentonow' ), // Title.
-			array( $this, 'bento_setting_field_callback' ), // Callback.
-			'bento-setting-admin', // Page.
-			'bento_setting_section_events_sender', // Section.
-			array(
-				'id'         => 'bento_events_user_not_completed_content',
-				'value'      => $this->options['bento_events_user_not_completed_content'] ?? 5,
-				'type'       => 'number',
-				'attributes' => array(
-					'min' => 0,
-					'max' => 360,
-				),
-			)
-		);
+			add_settings_field(
+				'bento_events_user_not_logged', // ID.
+				esc_html__( 'Send "user not logged" events after (days)', 'bentonow' ), // Title.
+				array( $this, 'bento_setting_field_callback' ), // Callback.
+				'bento-setting-admin', // Page.
+				'bento_setting_section_events_sender', // Section.
+				array(
+					'id'         => 'bento_events_user_not_logged',
+					'value'      => $this->options['bento_events_user_not_logged'] ?? 5,
+					'type'       => 'number',
+					'attributes' => array(
+						'min' => 0,
+						'max' => 360,
+					),
+				)
+			);
 
-		add_settings_field(
-			'bento_events_repeat_not_event', // ID.
-			esc_html__( 'Repeat user "not-events" each (days)', 'bentonow' ), // Title.
-			array( $this, 'bento_setting_field_callback' ), // Callback.
-			'bento-setting-admin', // Page.
-			'bento_setting_section_events_sender', // Section.
-			array(
-				'id'         => 'bento_events_repeat_not_event',
-				'value'      => $this->options['bento_events_repeat_not_event'] ?? 2,
-				'type'       => 'number',
-				'attributes' => array(
-					'min' => 0,
-					'max' => 360,
-				),
-			)
-		);
+			add_settings_field(
+				'bento_events_user_not_completed_content', // ID.
+				esc_html__( 'Send "user not completed content" events after (days)', 'bentonow' ), // Title.
+				array( $this, 'bento_setting_field_callback' ), // Callback.
+				'bento-setting-admin', // Page.
+				'bento_setting_section_events_sender', // Section.
+				array(
+					'id'         => 'bento_events_user_not_completed_content',
+					'value'      => $this->options['bento_events_user_not_completed_content'] ?? 5,
+					'type'       => 'number',
+					'attributes' => array(
+						'min' => 0,
+						'max' => 360,
+					),
+				)
+			);
+
+			add_settings_field(
+				'bento_events_repeat_not_event', // ID.
+				esc_html__( 'Repeat user "not-events" each (days)', 'bentonow' ), // Title.
+				array( $this, 'bento_setting_field_callback' ), // Callback.
+				'bento-setting-admin', // Page.
+				'bento_setting_section_events_sender', // Section.
+				array(
+					'id'         => 'bento_events_repeat_not_event',
+					'value'      => $this->options['bento_events_repeat_not_event'] ?? 2,
+					'type'       => 'number',
+					'attributes' => array(
+						'min' => 0,
+						'max' => 360,
+					),
+				)
+			);
+		}
+
 	}
 
 	/**

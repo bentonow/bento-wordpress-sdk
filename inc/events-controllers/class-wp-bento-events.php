@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 		/**
 		 * Unschedule the Bento events cron job. Used when the plugin is deactivated.
 		 */
-		public static function unschedule_bento_wp_cron() {
+		public static function remove_cron_jobs() {
 			$send_events_timestamp = wp_next_scheduled( 'bento_verify_logins_hook' );
 			wp_unschedule_event( $send_events_timestamp, 'bento_verify_logins_hook' );
 		}

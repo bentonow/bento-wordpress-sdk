@@ -75,9 +75,11 @@ class Bento_Helper {
 		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
 
-		// load events controllers.
-		require_once 'inc/class-bento-events-controller.php';
-		Bento_Events_Controller::init();
+		// load events controllers only if LearnDash is active.
+		if ( defined( 'LEARNDASH_VERSION' ) ) {
+			require_once 'inc/class-bento-events-controller.php';
+			Bento_Events_Controller::init();
+		}
 
 		// Plugin textdomain.
 		load_plugin_textdomain(
@@ -102,9 +104,15 @@ class Bento_Helper {
 	 */
 	public static function deactivate() {
 		// remove cron jobs.
-		Bento_Events_Controller::unschedule_bento_events_cron();
-		WP_Bento_Events::unschedule_bento_wp_cron();
-		LearnDash_Bento_Events::unschedule_bento_wp_cron();
+		if ( class_exists( 'Bento_Events_Controller' ) ) {
+			Bento_Events_Controller::remove_cron_jobs();
+		}
+		if ( class_exists( 'WP_Bento_Events' ) ) {
+			WP_Bento_Events::remove_cron_jobs();
+		}
+		if ( class_exists( 'LearnDash_Bento_Events' ) ) {
+			LearnDash_Bento_Events::remove_cron_jobs();
+		}
 	}
 
 	/**
