@@ -96,9 +96,9 @@ class Bento_Helper_Orders
     $this->sendSubscriptionEvent('$SubscriptionActive', $subscription);
   }
 
-  public function send_checkout_subscription_created_event($subscription, $order, $recurring_cart)
+  public function send_checkout_subscription_created_event($subscription)
   {
-    $this->sendEvent('$SubscriptionCreated', $order);
+    $this->sendSubscriptionEvent('$SubscriptionCreated', $subscription);
   }
 
   public function send_order_placed_event($order_id)
