@@ -29,7 +29,7 @@ class Bento_Custom
 
     wp_enqueue_script(
       'bento-js',
-      "https://app.bentonow.com/{$bento_site_key}.js?woocommerce=1",
+      "https://app.bentonow.com/no-tracking-{$bento_site_key}.js?woocommerce=1",
       [],
       false,
       true
