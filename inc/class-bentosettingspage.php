@@ -113,7 +113,7 @@ class BentoSettingsPage {
 				'bento_setting_section_events_sender', // Section.
 				array(
 					'id'         => 'bento_events_recurrence',
-					'value'      => $this->options['bento_events_recurrence'] ?? 1,
+					'value'      => $this->options['bento_events_recurrence'] ?? 30,
 					'type'       => 'number',
 					'attributes' => array(
 						'min' => 0,
@@ -130,7 +130,7 @@ class BentoSettingsPage {
 				'bento_setting_section_events_sender', // Section.
 				array(
 					'id'         => 'bento_events_user_not_logged',
-					'value'      => $this->options['bento_events_user_not_logged'] ?? 5,
+					'value'      => $this->options['bento_events_user_not_logged'] ?? 0,
 					'type'       => 'number',
 					'attributes' => array(
 						'min' => 0,
@@ -147,7 +147,7 @@ class BentoSettingsPage {
 				'bento_setting_section_events_sender', // Section.
 				array(
 					'id'         => 'bento_events_user_not_completed_content',
-					'value'      => $this->options['bento_events_user_not_completed_content'] ?? 5,
+					'value'      => $this->options['bento_events_user_not_completed_content'] ?? 0,
 					'type'       => 'number',
 					'attributes' => array(
 						'min' => 0,
@@ -164,7 +164,7 @@ class BentoSettingsPage {
 				'bento_setting_section_events_sender', // Section.
 				array(
 					'id'         => 'bento_events_repeat_not_event',
-					'value'      => $this->options['bento_events_repeat_not_event'] ?? 2,
+					'value'      => $this->options['bento_events_repeat_not_event'] ?? 0,
 					'type'       => 'number',
 					'attributes' => array(
 						'min' => 0,
