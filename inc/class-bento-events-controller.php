@@ -148,11 +148,17 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		public static function init() {
 			add_action( 'init', array( __CLASS__, 'load_events_controllers' ) );
 
-			// add cron job to send events to Bento.
-			add_filter( 'cron_schedules', array( __CLASS__, 'add_events_cron_interval' ) ); // phpcs:ignore WordPress.WP.CronInterval
-			add_action( 'bento_send_events_hook', array( __CLASS__, 'bento_send_events_hook' ) );
-			if ( ! wp_next_scheduled( 'bento_send_events_hook' ) ) {
-				wp_schedule_event( time(), 'bento_send_events_interval', 'bento_send_events_hook' );
+			$interval = self::get_bento_option( 'bento_events_recurrence' );
+			if ( ! empty( $interval ) ) {
+				// add cron job to send events to Bento.
+				add_filter( 'cron_schedules', array( __CLASS__, 'add_events_cron_interval' ) ); // phpcs:ignore WordPress.WP.CronInterval
+				add_action( 'bento_send_events_hook', array( __CLASS__, 'bento_send_events_hook' ) );
+
+				if ( ! wp_next_scheduled( 'bento_send_events_hook' ) ) {
+					wp_schedule_event( time(), 'bento_send_events_interval', 'bento_send_events_hook' );
+				}
+			} else {
+				self::remove_cron_jobs();
 			}
 		}
 
@@ -216,12 +222,15 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function add_events_cron_interval( $schedule ) {
 			$interval = self::get_bento_option( 'bento_events_recurrence' );
-			if ( ! empty( $interval ) ) {
-				$schedule['bento_send_events_interval'] = array(
-					'interval' => MINUTE_IN_SECONDS * $interval,
-					'display'  => __( 'Bento Send Events Interval', 'bentonow' ),
-				);
+			if ( empty( $interval ) ) {
+				return $schedule;
 			}
+
+			$schedule['bento_send_events_interval'] = array(
+				'interval' => MINUTE_IN_SECONDS * $interval,
+				'display'  => __( 'Bento Send Events Interval', 'bentonow' ),
+			);
+
 			return $schedule;
 		}
 
