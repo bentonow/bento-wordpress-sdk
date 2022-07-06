@@ -23,10 +23,16 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 		public function __construct() {
 			add_action( 'wp_login', array( $this, 'save_user_last_login_meta' ), 10, 2 );
 
-			// add cron job to send login events.
-			add_action( 'bento_verify_logins_hook', array( __CLASS__, 'bento_verify_logins_hook' ) );
-			if ( ! wp_next_scheduled( 'bento_verify_logins_hook' ) ) {
-				wp_schedule_event( time(), 'hourly', 'bento_verify_logins_hook' );
+			$bento_user_not_logged_interval = self::get_bento_option( 'bento_events_user_not_logged' );
+			if ( ! empty( $bento_user_not_logged_interval ) ) {
+				// add cron job to send login events.
+				add_action( 'bento_verify_logins_hook', array( __CLASS__, 'bento_verify_logins_hook' ) );
+
+				if ( ! wp_next_scheduled( 'bento_verify_logins_hook' ) ) {
+					wp_schedule_event( time(), 'hourly', 'bento_verify_logins_hook' );
+				}
+			} else {
+				self::remove_cron_jobs();
 			}
 		}
 

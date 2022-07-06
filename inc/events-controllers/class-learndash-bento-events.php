@@ -643,10 +643,17 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 		 */
 		private static function should_send_not_completed_event( $user_id, $bento_repeat_not_events ) {
 			$last_event_sent = get_user_meta( $user_id, self::BENTO_LAST_NOT_COMPLETED_EVENT_SENT_META_KEY, true );
-			if ( ! empty( $last_event_sent ) && ( empty( $bento_repeat_not_events ) || $last_event_sent > strtotime( "-$bento_repeat_not_events day" ) ) ) {
+
+			if ( empty( $last_event_sent ) ) { // event is not sent yet.
+				return true;
+			}
+
+			if ( empty( $bento_repeat_not_events ) ) { // repeat not completed events is not set.
 				return false;
 			}
-			return true;
+
+			// Check if it's time to send the event again.
+			return $last_event_sent <= strtotime( "-$bento_repeat_not_events day" );
 		}
 
 		/**
