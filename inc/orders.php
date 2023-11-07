@@ -20,17 +20,17 @@ class Bento_Helper_Orders
      // These are standard WooCommerce hooks
     // https://woocommerce.com/document/subscriptions/develop/action-reference/
     add_action('woocommerce_thankyou', [$this, 'send_order_placed_event']);
-    
+
     add_action('woocommerce_order_status_completed', [
       $this,
       'send_order_shipped_event',
     ]);
-    
+
     add_action('woocommerce_order_status_cancelled', [
       $this,
       'send_order_cancelled_event',
     ]);
-    
+
     add_action('woocommerce_order_refunded', [
       $this,
       'send_order_refunded_event',
@@ -92,7 +92,7 @@ class Bento_Helper_Orders
 
   public function send_woocommerce_subscription_status_active_event($subscription)
   {
-    $order = 
+    $order =
     $this->sendSubscriptionEvent('$SubscriptionActive', $subscription);
   }
 
@@ -132,11 +132,16 @@ class Bento_Helper_Orders
   private function sendSubscriptionEvent($name, $subscription)
   {
     $bento_options = get_option('bento_settings');
-    $bento_site_key = $bento_options['bento_site_key'];
 
-    if (empty($bento_site_key)) {
+    if (
+      ! $bento_options ||
+      ! array_key_exists( 'bento_site_key', $bento_options ) ||
+      empty( $bento_options['bento_site_key'] )
+    ) {
       return;
     }
+
+    $bento_site_key = $bento_options['bento_site_key'];
 
     // $details = [
     //  'cart' => [
@@ -166,11 +171,16 @@ class Bento_Helper_Orders
   private function sendEvent($name, $order)
   {
     $bento_options = get_option('bento_settings');
-    $bento_site_key = $bento_options['bento_site_key'];
 
-    if (empty($bento_site_key)) {
+    if (
+      ! $bento_options ||
+      ! array_key_exists( 'bento_site_key', $bento_options ) ||
+      empty( $bento_options['bento_site_key'] )
+    ) {
       return;
     }
+
+    $bento_site_key = $bento_options['bento_site_key'];
 
     $details = [
       'cart' => [
