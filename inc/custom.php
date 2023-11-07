@@ -8,7 +8,7 @@ class Bento_Custom
   /**
    * Current version of Bento.
    */
-  public $version = '1.0.1';
+  public $version = '1.0.2';
 
   public function __construct()
   {
@@ -20,12 +20,17 @@ class Bento_Custom
    */
   public function scripts_styles()
   {
-    $bento_options = get_option('bento_settings');
-    $bento_site_key = $bento_options['bento_site_key'];
+    $bento_options = get_option( 'bento_settings' );
 
-    if (empty($bento_site_key)) {
+    if (
+      ! $bento_options ||
+      ! array_key_exists( 'bento_site_key', $bento_options ) ||
+      empty( $bento_site_key )
+    ) {
       return;
     }
+
+    $bento_site_key = $bento_options['bento_site_key'];
 
     wp_enqueue_script(
       'bento-js',

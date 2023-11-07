@@ -10,7 +10,7 @@
     "gulp-uglify": "^3.0.1",
     "prettier": "^2.0.5"
   },
-  "version": "1.0.1",
+  "version": "1.0.2",
   "dependencies": {
     "const": "^1.0.0",
     "gulp-uglify-es": "^2.0.0"
