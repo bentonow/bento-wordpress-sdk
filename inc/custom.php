@@ -25,7 +25,7 @@ class Bento_Custom
     if (
       ! $bento_options ||
       ! array_key_exists( 'bento_site_key', $bento_options ) ||
-      empty( $bento_site_key )
+      empty( $bento_options['bento_site_key'] )
     ) {
       return;
     }
