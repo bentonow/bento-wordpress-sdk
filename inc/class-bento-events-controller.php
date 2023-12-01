@@ -77,13 +77,14 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		/**
 		 * Send an event to Bento.
 		 *
-		 * @param int    $user_id The user ID that generates the event.
-		 * @param string $type The event type.
-		 * @param string $email The email event is for.
-		 * @param array  $details The event details.
+		 * @param int|null $user_id The user ID that generates the event.
+		 * @param string   $type    The event type.
+		 * @param string   $email   The email event is for.
+		 * @param array    $details The event details.
+		 *
 		 * @return bool True if event was sent successfully.
 		 */
-		private static function send_event( $user_id, $type, $email, $details = array() ) {
+		protected static function send_event( $user_id = null, $type, $email, $details = array() ) {
 			$bento_site_key = self::get_bento_option( 'bento_site_key' );
 			if ( empty( $bento_site_key ) ) {
 				return;
@@ -94,8 +95,11 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				'type'    => $type,
 				'email'   => $email,
 				'details' => $details,
-				'fields'  => self::get_user_fields( $user_id ),
 			);
+
+			if ( ! is_null( $user_id ) ) {
+				$data['fields'] = self::get_user_fields( $user_id );
+			}
 
 			$response      = wp_remote_post(
 				self::BENTO_API_EVENT_ENDPOINT,
@@ -241,9 +245,16 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function load_events_controllers() {
 			$controllers = array(
-				'class-wp-bento-events',
-				'class-learndash-bento-events',
+				'class-wp-bento-events'
 			);
+
+			if ( defined( 'LEARNDASH_VERSION' ) ) {
+				$controllers[] = 'class-learndash-bento-events';
+			}
+
+			if ( class_exists( 'WooCommerce' ) ) {
+				$controllers[] = 'class-woocommerce-bento-events';
+			}
 
 			foreach ( $controllers as $controller ) {
 				require_once 'events-controllers/' . $controller . '.php';

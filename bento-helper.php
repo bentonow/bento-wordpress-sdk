@@ -70,17 +70,14 @@ class Bento_Helper {
 
 		if ( class_exists( 'WooCommerce' ) ) {
 			require_once 'inc/ajax.php';
-			require_once 'inc/orders.php';
 		}
 
 		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
 
-		// load events controllers only if LearnDash is active.
-		if ( defined( 'LEARNDASH_VERSION' ) ) {
-			require_once 'inc/class-bento-events-controller.php';
-			Bento_Events_Controller::init();
-		}
+		// Setup events controllers.
+		require_once 'inc/class-bento-events-controller.php';
+		Bento_Events_Controller::init();
 
 		// Plugin textdomain.
 		load_plugin_textdomain(

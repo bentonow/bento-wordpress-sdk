@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 	/**
-	 * LearnDash Bento Events
+	 * WP Bento Events
 	 */
 	class WP_Bento_Events extends Bento_Events_Controller {
 		const BENTO_LAST_LOGIN_META_KEY            = 'bento_last_login';
