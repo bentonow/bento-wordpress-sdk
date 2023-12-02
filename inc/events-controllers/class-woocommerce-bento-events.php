@@ -31,7 +31,7 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
                 // Add the order value.
                 $details['value'] = array(
                     'currency' => $order->get_currency(),
-                    'total'    => $order->get_total(),
+                    'amount'   => $order->get_total(),
                 );
 
                 self::send_event(
