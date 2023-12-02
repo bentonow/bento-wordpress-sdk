@@ -93,6 +93,26 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
                 );
             }
         );
+
+        add_action(
+            'woocommerce_order_status_completed',
+            function( $order_id ) {
+                $order = wc_get_order( $order_id );
+
+                // If the order has an associated user.
+                $user_id = self::maybe_get_user_id_from_order( $order );
+
+                // Preare the order details.
+                $details = self::prepare_order_event_details( $order );
+
+                self::send_event(
+                    $user_id,
+                    '$OrderShipped',
+                    $order->get_billing_email(),
+                    $details
+                );
+            }
+        );
     }
 
     /**
