@@ -51,13 +51,7 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
      *
      * @return array
      */
-    private static function prepare_order_event_details( $order_id ) {
-        $order = wc_get_order( $order_id );
-
-        if ( ! $order instanceof WC_Order ) {
-            return;
-        }
-
+    private static function prepare_order_event_details( $order ) {
         $details = array(
             'unique' => array(
                 'key' => $order->get_order_key(),
