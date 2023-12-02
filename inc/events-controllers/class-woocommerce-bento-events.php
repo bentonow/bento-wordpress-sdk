@@ -42,6 +42,37 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
                 );
             }
         );
+
+        add_action(
+            'woocommerce_order_refunded',
+            function( $order_id, $refund_id ) {
+                $order = wc_get_order( $order_id );
+
+                // If the order has an associated user.
+                $user_id = self::maybe_get_user_id_from_order( $order );
+
+                // Preare the order details.
+                $details = self::prepare_order_event_details( $order );
+
+                // Get the refund.
+                $refund = wc_get_order( $refund_id );
+
+                // Add the refund value.
+                $details['value'] = array(
+                    'currency' => $refund->get_currency(),
+                    'amount'   => $refund->get_total(),
+                );
+
+                self::send_event(
+                    $user_id,
+                    '$OrderRefunded',
+                    $order->get_billing_email(),
+                    $details
+                );
+            },
+            10,
+            2
+        );
     }
 
     /**
