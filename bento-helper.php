@@ -55,7 +55,7 @@ class Bento_Helper {
 	 */
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
-		add_action( 'before_woocommerce_init', array( $this, 'woocommerce_support_hpos' ) );
+		add_action( 'before_woocommerce_init', array( $this, 'woocommerce_declare_hpos_support' ) );
 
 		// Set URL.
 		$this->url = plugin_dir_url( __FILE__ );
@@ -132,7 +132,7 @@ class Bento_Helper {
 	 *
 	 * @return void
 	 */
-	public function woocommerce_support_hpos() {
+	public function woocommerce_declare_hpos_support() {
 		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 		}
