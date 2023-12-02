@@ -12,15 +12,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerce_Bento_Events extends Bento_Events_Controller {
 
     /**
-     * The events that should include value in details.
-     *
-     * @var array
-     */
-    protected static $events_with_value = array(
-        '$OrderPlaced',
-    );
-
-    /**
      * Constructor.
      *
      * @return void
@@ -31,13 +22,23 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
             function( $order_id ) {
                 $order = wc_get_order( $order_id );
 
+                // If the order has an associated user.
                 $user_id = self::maybe_get_user_id_from_order( $order );
+
+                // Preare the order details.
+                $details = self::prepare_order_event_details( $order );
+
+                // Add the order value.
+                $details['value'] = array(
+                    'currency' => $order->get_currency(),
+                    'total'    => $order->get_total(),
+                );
 
                 self::send_event(
                     $user_id,
                     '$OrderPlaced',
                     $order->get_billing_email(),
-                    self::get_order_details( $order, '$OrderPlaced' )
+                    $details
                 );
             }
         );
@@ -47,11 +48,10 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
      * Prepare the order details.
      *
      * @param WC_Order $order The order object.
-     * @param string   $type  The event type.
      *
      * @return array
      */
-    private static function get_order_details( $order_id, $type ) {
+    private static function prepare_order_event_details( $order_id ) {
         $order = wc_get_order( $order_id );
 
         if ( ! $order instanceof WC_Order ) {
@@ -66,14 +66,6 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
                 'items' => self::get_cart_items( $order ),
             ),
         );
-
-        if ( in_array( $type, self::$events_with_value ) ) {
-            $value = self::get_event_value( $type, $order );
-
-            if ( ! empty( $value ) ) {
-                $details['value'] = $value;
-            }
-        }
 
         return $details;
     }
@@ -109,30 +101,6 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
         }
 
         return $items;
-    }
-
-    /**
-     * Get the event value based on the event type.
-     *
-     * @param string   $type  The event type.
-     * @param WC_Order $order The order object.
-     *
-     * @return array
-     */
-    private static function get_event_value( $type, $order ) {
-        if ( ! $order instanceof WC_Order ) {
-            return;
-        }
-
-        $value = array(
-            'currency' => $order->get_currency(),
-        );
-
-        if ( '$OrderPlaced' === $type ) {
-            $value['amount'] = $order->get_total();
-        }
-
-        return $value;
     }
 
     /**
