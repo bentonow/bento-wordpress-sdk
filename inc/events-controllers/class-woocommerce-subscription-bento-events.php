@@ -107,6 +107,21 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
                 );
             }
         );
+
+        add_action(
+            'woocommerce_subscription_renewal_payment_complete',
+            function( $subscription ) {
+                $user_id = self::maybe_get_user_id_from_order( $subscription );
+                $details = self::prepare_subscription_event_details( $subscription );
+
+                self::send_event(
+                    $user_id,
+                    '$SubscriptionRenewalComplete',
+                    $subscription->get_billing_email(),
+                    $details
+                );
+            }
+        );
     }
 
     /**
