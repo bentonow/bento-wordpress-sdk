@@ -95,7 +95,7 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
             'woocommerce_order_status_completed',
             function( $order_id ) {
                 $order = wc_get_order( $order_id );
-.
+
                 $user_id = self::maybe_get_user_id_from_order( $order );
 
                 $details = self::prepare_order_event_details( $order );
