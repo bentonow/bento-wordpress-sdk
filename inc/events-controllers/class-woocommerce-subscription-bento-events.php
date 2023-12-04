@@ -20,11 +20,7 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
         add_action(
             'woocommerce_checkout_subscription_created',
             function( $subscription ) {
-
-                // If the order has an associated user.
                 $user_id = self::maybe_get_user_id_from_order( $subscription );
-
-                // Prepare the subscription details.
                 $details = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
@@ -40,7 +36,6 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'woocommerce_subscription_status_active',
             function ( $subscription ) {
                 $user_id = self::maybe_get_user_id_from_order( $subscription );
-
                 $details = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
@@ -56,7 +51,6 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'woocommerce_subscription_status_cancelled',
             function ( $subscription ) {
                 $user_id = self::maybe_get_user_id_from_order( $subscription );
-
                 $details = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
@@ -72,7 +66,6 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'woocommerce_subscription_status_expired',
             function ( $subscription ) {
                 $user_id = self::maybe_get_user_id_from_order( $subscription );
-
                 $details = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
@@ -88,7 +81,6 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'woocommerce_subscription_status_on-hold',
             function ( $subscription ) {
                 $user_id = self::maybe_get_user_id_from_order( $subscription );
-
                 $details = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
@@ -104,10 +96,8 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'woocommerce_scheduled_subscription_trial_end',
             function( $subscription_id ) {
                 $subscription = wcs_get_subscription( $subscription_id );
-
-                $user_id = self::maybe_get_user_id_from_order( $subscription );
-
-                $details = self::prepare_subscription_event_details( $subscription );
+                $user_id      = self::maybe_get_user_id_from_order( $subscription );
+                $details      = self::prepare_subscription_event_details( $subscription );
 
                 self::send_event(
                     $user_id,
