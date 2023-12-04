@@ -146,7 +146,7 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
      *
      * @return void
      */
-    private static function get_cart_items( $order ) {
+    protected static function get_cart_items( $order ) {
         $base_currency = get_woocommerce_currency();
 
         $items = array();

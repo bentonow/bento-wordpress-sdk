@@ -131,6 +131,9 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
             'subscription' => array(
                 'id'     => $subscription->get_id(),
                 'status' => $subscription->get_status(),
+                'order'  => array(
+                    'items' => self::get_cart_items( $subscription ),
+                ),
             ),
         );
 
