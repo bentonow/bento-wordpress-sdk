@@ -18,7 +18,7 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
      */
     public function __construct() {
         add_action(
-            'woocommerce_thankyou',
+            'woocommerce_checkout_order_created',
             function( $order_id ) {
                 $order   = wc_get_order( $order_id );
                 $user_id = self::maybe_get_user_id_from_order( $order );
