@@ -251,6 +251,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 			if ( class_exists( 'WooCommerce' ) ) {
 				$controllers[] = 'class-woocommerce-bento-events';
+
+				if ( class_exists( 'WC_Subscriptions' ) ) {
+					$controllers[] = 'class-woocommerce-subscription-bento-events';
+				}
 			}
 
 			foreach ( $controllers as $controller ) {

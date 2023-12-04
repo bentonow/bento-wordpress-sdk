@@ -22,17 +22,23 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
             function( $order_id ) {
                 $order = wc_get_order( $order_id );
 
+                if ( ! $order || function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $order ) ) {
+                    return;
+                }
+
                 // If the order has an associated user.
                 $user_id = self::maybe_get_user_id_from_order( $order );
 
                 // Preare the order details.
                 $details = self::prepare_order_event_details( $order );
 
-                // Add the order value.
-                $details['value'] = array(
-                    'currency' => $order->get_currency(),
-                    'amount'   => $order->get_total(),
-                );
+                // Add the order value if it's greater than 0.
+                if ( $order->get_total() > 0 ) {
+                    $details['value'] = array(
+                        'currency' => $order->get_currency(),
+                        'amount'   => $order->get_total(),
+                    );
+                }
 
                 self::send_event(
                     $user_id,
@@ -171,14 +177,14 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
     /**
      * Return the user ID from the order, if available.
      *
-     * @param WC_Order $order
+     * @param WC_Order $order The order object.
      *
      * @return mixed
      */
-    private static function maybe_get_user_id_from_order( $order ) {
+    protected static function maybe_get_user_id_from_order( $order ) {
         $user_id = null;
 
-        if ( 0 !== $order->get_customer_id() ) {
+        if ( $order && 0 !== $order->get_customer_id() ) {
             $user_id = $order->get_customer_id();
         }
 
