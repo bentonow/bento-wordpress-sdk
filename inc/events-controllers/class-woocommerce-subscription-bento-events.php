@@ -126,7 +126,7 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
 
                 self::send_event(
                     $user_id,
-                    '$SubscriptionRenewalComplete',
+                    '$SubscriptionRenewed',
                     $subscription->get_billing_email(),
                     $details
                 );
