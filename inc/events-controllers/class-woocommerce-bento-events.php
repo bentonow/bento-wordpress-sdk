@@ -22,10 +22,6 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
             function( $order_id ) {
                 $order = wc_get_order( $order_id );
 
-                if ( ! $order || function_exists( 'wcs_is_subscription' ) && wcs_is_subscription( $order ) ) {
-                    return;
-                }
-
                 $user_id = self::maybe_get_user_id_from_order( $order );
 
                 $details = self::prepare_order_event_details( $order );
@@ -49,13 +45,14 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
         add_action(
             'woocommerce_order_refunded',
             function( $order_id, $refund_id ) {
-                $order = wc_get_order( $order_id );
-
+                $order   = wc_get_order( $order_id );
+                $refund  = wc_get_order( $refund_id );
                 $user_id = self::maybe_get_user_id_from_order( $order );
 
-                $details = self::prepare_order_event_details( $order );
-
-                $refund = wc_get_order( $refund_id );
+                $details = self::prepare_order_event_details(
+                    $order,
+                    sprintf( 'wc_refund_%d', $refund->get_id() )
+                );
 
                 $details['value'] = array(
                     'currency' => $refund->get_currency(),
@@ -114,13 +111,14 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
      * Prepare the order details.
      *
      * @param WC_Order $order The order object.
+     * @param string   $key   Unique order key.
      *
      * @return array
      */
-    private static function prepare_order_event_details( $order ) {
+    private static function prepare_order_event_details( $order, $key = null ) {
         $details = array(
             'unique' => array(
-                'key' => $order->get_order_key(),
+                'key' => $key ? $key : $order->get_order_key(),
             ),
             'cart'  => array(
                 'items' => self::get_cart_items( $order ),
@@ -173,7 +171,11 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
     protected static function maybe_get_user_id_from_order( $order ) {
         $user_id = null;
 
-        if ( $order && 0 !== $order->get_customer_id() ) {
+        if (
+            $order &&
+            is_a( $order, 'WC_Order' ) &&
+            $order->get_customer_id()
+        ) {
             $user_id = $order->get_customer_id();
         }
 

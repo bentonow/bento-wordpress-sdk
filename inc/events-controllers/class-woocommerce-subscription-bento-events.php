@@ -109,10 +109,20 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
         );
 
         add_action(
-            'woocommerce_subscription_renewal_payment_complete',
-            function( $subscription ) {
-                $user_id = self::maybe_get_user_id_from_order( $subscription );
-                $details = self::prepare_subscription_event_details( $subscription );
+            'woocommerce_scheduled_subscription_payment',
+            function( $subscription_id ) {
+                $subscription = wcs_get_subscription( $subscription_id );
+                $user_id      = self::maybe_get_user_id_from_order( $subscription );
+                $details      = self::prepare_subscription_event_details( $subscription );
+
+                $order = $subscription->get_last_order( 'all' );
+
+                if ( $order->get_total() > 0 ) {
+                    $details['value'] = array(
+                        'currency' => $subscription->get_currency(),
+                        'amount'   => $subscription->get_total(),
+                    );
+                }
 
                 self::send_event(
                     $user_id,
@@ -132,7 +142,12 @@ class WooCommerce_Subscription_Bento_Events extends WooCommerce_Bento_Events {
      * @return array
      */
     private static function prepare_subscription_event_details( $subscription ) {
+        $order = $subscription->get_last_order( 'all' );
+
         $details = array(
+            'unique' => array(
+                'key' => $order->get_order_key(),
+            ),
             'subscription' => array(
                 'id'     => $subscription->get_id(),
                 'status' => $subscription->get_status(),
