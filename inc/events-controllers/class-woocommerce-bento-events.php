@@ -20,10 +20,8 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
         add_action(
             'woocommerce_thankyou',
             function( $order_id ) {
-                $order = wc_get_order( $order_id );
-
+                $order   = wc_get_order( $order_id );
                 $user_id = self::maybe_get_user_id_from_order( $order );
-
                 $details = self::prepare_order_event_details( $order );
 
                 if ( $order->get_total() > 0 ) {
@@ -73,10 +71,8 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
         add_action(
             'woocommerce_order_status_cancelled',
             function( $order_id ) {
-                $order = wc_get_order( $order_id );
-
+                $order   = wc_get_order( $order_id );
                 $user_id = self::maybe_get_user_id_from_order( $order );
-
                 $details = self::prepare_order_event_details( $order );
 
                 self::send_event(
@@ -91,10 +87,8 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
         add_action(
             'woocommerce_order_status_completed',
             function( $order_id ) {
-                $order = wc_get_order( $order_id );
-
+                $order   = wc_get_order( $order_id );
                 $user_id = self::maybe_get_user_id_from_order( $order );
-
                 $details = self::prepare_order_event_details( $order );
 
                 self::send_event(
