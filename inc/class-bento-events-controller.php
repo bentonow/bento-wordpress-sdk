@@ -257,6 +257,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				}
 			}
 
+			if ( class_exists( 'Easy_Digital_Downloads' ) ) {
+				$controllers[] = 'class-edd-bento-events';
+			}
+
 			foreach ( $controllers as $controller ) {
 				require_once 'events-controllers/' . $controller . '.php';
 			}
