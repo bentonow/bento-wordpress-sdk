@@ -24,15 +24,8 @@ class EDD_Bento_Events extends Bento_Events_Controller {
                 $order    = edd_get_order( $order_id );
 
                 $details = array(
-                    'download' => array(
-                        'type'  => $download_type,
-                        'id'    => $download->get_id(),
-                        'name'  => $download->get_name(),
-                        'price' => $download->get_price(),
-                        'notes' => $download->get_notes(),
-                        'url'   => get_permalink( $download->get_id() ),
-                    ),
-                    'value' => array(
+                    'download' => self::prepare_download_event_details( $download ),
+                    'value'    => array(
                         'currency' => $order->currency,
                         'amount'   => $download->get_price()
                     ),
@@ -48,6 +41,30 @@ class EDD_Bento_Events extends Bento_Events_Controller {
             10,
             3
         );
+    }
+
+    /**
+     * Prepare the download details.
+     *
+     * @param EDD_Download $download The download object.
+     *
+     * @return mixed
+     */
+    protected static function prepare_download_event_details( $download ) {
+        if ( ! $download ) {
+            return null;
+        }
+
+        $details = array(
+            'type'  => $download_type,
+            'id'    => $download->get_id(),
+            'name'  => $download->get_name(),
+            'price' => $download->get_price(),
+            'notes' => $download->get_notes(),
+            'url'   => get_permalink( $download->get_id() ),
+        );
+
+        return $details;
     }
 
     /**
