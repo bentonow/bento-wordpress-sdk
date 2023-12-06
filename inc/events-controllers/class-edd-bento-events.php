@@ -5,171 +5,174 @@
  * @package BentoHelper
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
+defined( 'ABSPATH' ) || exit;
 
-class EDD_Bento_Events extends Bento_Events_Controller {
-
+if ( class_exists( 'Easy_Digital_Downloads' ) && ! class_exists( 'EDD_Bento_Events', false ) ) {
     /**
-     * Constructor.
-     *
-     * @return void
+     * Easy Digital Downloads Events
      */
-    public function __construct() {
-        add_action(
-            'edd_complete_purchase',
-            function( $payment_id ) {
-                $order    = edd_get_order( $payment_id );
-                $details  = self::prepare_download_event_details( $order );
+    class EDD_Bento_Events extends Bento_Events_Controller {
 
-                if ( $order->total > 0 ) {
-                    $details['value'] = array(
-                        'currency' => $order->currency,
-                        'amount'   => $order->total
+        /**
+         * Constructor.
+         *
+         * @return void
+         */
+        public function __construct() {
+            add_action(
+                'edd_complete_purchase',
+                function( $payment_id ) {
+                    $order    = edd_get_order( $payment_id );
+                    $details  = self::prepare_download_event_details( $order );
+
+                    if ( $order->total > 0 ) {
+                        $details['value'] = array(
+                            'currency' => $order->currency,
+                            'amount'   => $order->total
+                        );
+                    }
+
+                    self::send_event(
+                        self::maybe_get_user_id_from_order( $order ),
+                        '$DownloadPurchased',
+                        $order->email,
+                        $details
                     );
-                }
+                },
+                10,
+                3
+            );
 
-                self::send_event(
-                    self::maybe_get_user_id_from_order( $order ),
-                    '$DownloadPurchased',
-                    $order->email,
-                    $details
-                );
-            },
-            10,
-            3
-        );
+            add_action(
+                'edd_process_verified_download',
+                function( $download_id, $email ) {
+                    $download = edd_get_download( $download_id );
 
-        add_action(
-            'edd_process_verified_download',
-            function( $download_id, $email ) {
-                $download = edd_get_download( $download_id );
-
-                $details = array(
-                    'download' => array(
-                        'id'        => $download_id,
-                        'name'      => $download->get_name(),
-                        'permalink' => get_permalink( $download_id ),
-                        'price'     => $download->get_price(),
-                        'sku'       => $download->get_sku(),
-                    ),
-                );
-
-                self::send_event(
-                    email_exists( $email ),
-                    '$DownloadDownloaded',
-                    $email,
-                    $details
-                );
-            },
-            10,
-            2
-        );
-
-        add_action(
-            'edd_refund_order',
-            function( $order_id, $refund_id, $all_refunded ) {
-                $refund  = edd_get_order( $refund_id );
-                $details = self::prepare_download_event_details( $refund );
-
-                if ( $refund->total < 0 ) {
-                    $details['value'] = array(
-                        'currency' => $refund->currency,
-                        'amount'   => $refund->total
+                    $details = array(
+                        'download' => array(
+                            'id'        => $download_id,
+                            'name'      => $download->get_name(),
+                            'permalink' => get_permalink( $download_id ),
+                            'price'     => $download->get_price(),
+                            'sku'       => $download->get_sku(),
+                        ),
                     );
-                }
 
-                self::send_event(
-                    self::maybe_get_user_id_from_order( $refund ),
-                    '$DownloadRefunded',
-                    $refund->email,
-                    $details
-                );
-            },
-            10,
-            3
-        );
-    }
+                    self::send_event(
+                        email_exists( $email ),
+                        '$DownloadDownloaded',
+                        $email,
+                        $details
+                    );
+                },
+                10,
+                2
+            );
 
-    /**
-     * Prepare the download details.
-     *
-     * @param Order  $order The order object.
-     * @param string $key   Unique order key.
-     *
-     * @return mixed
-     */
-    protected static function prepare_download_event_details( $order, $key = null ) {
-        if ( ! $order ) {
-            return null;
-        }
+            add_action(
+                'edd_refund_order',
+                function( $order_id, $refund_id, $all_refunded ) {
+                    $refund  = edd_get_order( $refund_id );
+                    $details = self::prepare_download_event_details( $refund );
 
-        $details = array(
-            'unique' => array(
-                'key' => $key ? $key : $order->get_number(),
-            ),
-            'cart' => array(
-                'items' => self::get_cart_items( $order ),
-            ),
-        );
+                    if ( $refund->total < 0 ) {
+                        $details['value'] = array(
+                            'currency' => $refund->currency,
+                            'amount'   => $refund->total
+                        );
+                    }
 
-        return $details;
-    }
-
-    /**
-     * Prepare the cart items from the order.
-     *
-     * @param Order $order The order object.
-     *
-     * @return mixed
-     */
-    protected static function get_cart_items( $order ) {
-        $base_currency = edd_get_currency();
-
-        $items = array();
-
-        foreach( $order->get_items() as $item ) {
-            $download = edd_get_download( $item->product_id );
-
-            if ( ! $download ) {
-                continue;
-            }
-
-            $items[] = array(
-                'shop_base_currency'    => $base_currency,
-                'product_id'            => $item->product_id,
-                'product_name'          => $item->product_name,
-                'product_permalink'     => get_permalink( $item->product_id ),
-                'product_price'         => $item->amount,
-                'product_sku'           => $download->get_sku(),
-                'quantity'              => $item->quantity,
+                    self::send_event(
+                        self::maybe_get_user_id_from_order( $refund ),
+                        '$DownloadRefunded',
+                        $refund->email,
+                        $details
+                    );
+                },
+                10,
+                3
             );
         }
 
-        return $items;
-    }
+        /**
+         * Prepare the download details.
+         *
+         * @param Order  $order The order object.
+         * @param string $key   Unique order key.
+         *
+         * @return mixed
+         */
+        protected static function prepare_download_event_details( $order, $key = null ) {
+            if ( ! $order ) {
+                return null;
+            }
 
-    /**
-     * Return the user ID from the order, if available.
-     *
-     * @param Order $order The order object.
-     *
-     * @return mixed
-     */
-    protected static function maybe_get_user_id_from_order( $order ) {
-        $user_id = null;
+            $details = array(
+                'unique' => array(
+                    'key' => $key ? $key : $order->get_number(),
+                ),
+                'cart' => array(
+                    'items' => self::get_cart_items( $order ),
+                ),
+            );
 
-        if (
-            $order &&
-            is_a( $order, 'EDD\Orders\Order' ) &&
-            $order->user_id
-        ) {
-            $user_id = $order->user_id;
+            return $details;
         }
 
-        return $user_id;
-    }
-}
+        /**
+         * Prepare the cart items from the order.
+         *
+         * @param Order $order The order object.
+         *
+         * @return mixed
+         */
+        protected static function get_cart_items( $order ) {
+            $base_currency = edd_get_currency();
 
-new EDD_Bento_Events();
+            $items = array();
+
+            foreach( $order->get_items() as $item ) {
+                $download = edd_get_download( $item->product_id );
+
+                if ( ! $download ) {
+                    continue;
+                }
+
+                $items[] = array(
+                    'shop_base_currency'    => $base_currency,
+                    'product_id'            => $item->product_id,
+                    'product_name'          => $item->product_name,
+                    'product_permalink'     => get_permalink( $item->product_id ),
+                    'product_price'         => $item->amount,
+                    'product_sku'           => $download->get_sku(),
+                    'quantity'              => $item->quantity,
+                );
+            }
+
+            return $items;
+        }
+
+        /**
+         * Return the user ID from the order, if available.
+         *
+         * @param Order $order The order object.
+         *
+         * @return mixed
+         */
+        protected static function maybe_get_user_id_from_order( $order ) {
+            $user_id = null;
+
+            if (
+                $order &&
+                is_a( $order, 'EDD\Orders\Order' ) &&
+                $order->user_id
+            ) {
+                $user_id = $order->user_id;
+            }
+
+            return $user_id;
+        }
+    }
+
+    new EDD_Bento_Events();
+}

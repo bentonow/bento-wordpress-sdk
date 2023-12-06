@@ -242,24 +242,12 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function load_events_controllers() {
 			$controllers = array(
-				'class-wp-bento-events'
+				'class-wp-bento-events',
+				'class-learndash-bento-events',
+				'class-woocommerce-bento-events',
+				'class-woocommerce-subscriptions-bento-events',
+				'class-edd-bento-events',
 			);
-
-			if ( defined( 'LEARNDASH_VERSION' ) ) {
-				$controllers[] = 'class-learndash-bento-events';
-			}
-
-			if ( class_exists( 'WooCommerce' ) ) {
-				$controllers[] = 'class-woocommerce-bento-events';
-
-				if ( class_exists( 'WC_Subscriptions' ) ) {
-					$controllers[] = 'class-woocommerce-subscription-bento-events';
-				}
-			}
-
-			if ( class_exists( 'Easy_Digital_Downloads' ) ) {
-				$controllers[] = 'class-edd-bento-events';
-			}
 
 			foreach ( $controllers as $controller ) {
 				require_once 'events-controllers/' . $controller . '.php';
