@@ -18,18 +18,17 @@ class EDD_Bento_Events extends Bento_Events_Controller {
      */
     public function __construct() {
         add_action(
-            'edd_complete_download_purchase',
-            function( $download_id, $order_id, $download_type ) {
-                $download = edd_get_download( $download_id );
-                $order    = edd_get_order( $order_id );
+            'edd_complete_purchase',
+            function( $payment_id ) {
+                $order    = edd_get_order( $payment_id );
+                $details  = self::prepare_download_event_details( $order );
 
-                $details = array(
-                    'download' => self::prepare_download_event_details( $download ),
-                    'value'    => array(
+                if ( $order->total > 0 ) {
+                    $details['value'] = array(
                         'currency' => $order->currency,
-                        'amount'   => $download->get_price()
-                    ),
-                );
+                        'amount'   => $order->total
+                    );
+                }
 
                 self::send_event(
                     self::maybe_get_user_id_from_order( $order ),
@@ -46,25 +45,58 @@ class EDD_Bento_Events extends Bento_Events_Controller {
     /**
      * Prepare the download details.
      *
-     * @param EDD_Download $download The download object.
+     * @param Order $order The order object.
      *
      * @return mixed
      */
-    protected static function prepare_download_event_details( $download ) {
-        if ( ! $download ) {
+    protected static function prepare_download_event_details( $order ) {
+        if ( ! $order ) {
             return null;
         }
 
         $details = array(
-            'type'  => $download_type,
-            'id'    => $download->get_id(),
-            'name'  => $download->get_name(),
-            'price' => $download->get_price(),
-            'notes' => $download->get_notes(),
-            'url'   => get_permalink( $download->get_id() ),
+            'cart' => array(
+                'items' => self::get_cart_items( $order ),
+            ),
         );
 
         return $details;
+    }
+
+    /**
+     * Prepare the cart items from the order.
+     *
+     * @param Order $order The order object.
+     *
+     * @return mixed
+     */
+    protected static function get_cart_items( $order ) {
+        $base_currency = edd_get_currency();
+
+        $items = array();
+
+        foreach( $order->get_items() as $item ) {
+            $download = edd_get_download( $item->product_id );
+
+            if ( ! $download ) {
+                continue;
+            }
+
+            $items[] = array(
+                'shop_base_currency'    => $base_currency,
+                'product_id'            => $item->product_id,
+                'product_name'          => $item->product_name,
+                'product_permalink'     => get_permalink( $item->product_id ),
+                'product_price'         => $item->amount,
+                'product_sku'           => $download->get_sku(),
+                'quantity'              => $item->quantity,
+                'line_total'            => $item->total,
+                'line_tax'              => $item->tax,
+                'line_subtotal'         => $item->subtotal,
+            );
+        }
+
+        return $items;
     }
 
     /**
