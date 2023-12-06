@@ -40,6 +40,32 @@ class EDD_Bento_Events extends Bento_Events_Controller {
             10,
             3
         );
+
+        add_action(
+            'edd_process_verified_download',
+            function( $download_id, $email ) {
+                $download = edd_get_download( $download_id );
+
+                $details = array(
+                    'download' => array(
+                        'id'        => $download_id,
+                        'name'      => $download->get_name(),
+                        'permalink' => get_permalink( $download_id ),
+                        'price'     => $download->get_price(),
+                        'sku'       => $download->get_sku(),
+                    ),
+                );
+
+                self::send_event(
+                    email_exists( $email ),
+                    '$DownloadDownloaded',
+                    $email,
+                    $details
+                );
+            },
+            10,
+            2
+        );
     }
 
     /**
