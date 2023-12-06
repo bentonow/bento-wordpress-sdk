@@ -2,7 +2,7 @@
 Contributors: (this should be a list of wordpress.org userid's)
 Tags: marketing automation, email marketing, ecommerce analytics
 Requires at least: 4.7
-Tested up to: 6.4.1
+Tested up to: 6.4.2
 Stable tag: 4.3
 Requires PHP: 7.0
 License: GPLv2 or later
