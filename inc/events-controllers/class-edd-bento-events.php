@@ -66,6 +66,30 @@ class EDD_Bento_Events extends Bento_Events_Controller {
             10,
             2
         );
+
+        add_action(
+            'edd_refund_order',
+            function( $order_id, $refund_id, $all_refunded ) {
+                $refund  = edd_get_order( $refund_id );
+                $details = self::prepare_download_event_details( $refund );
+
+                if ( $refund->total < 0 ) {
+                    $details['value'] = array(
+                        'currency' => $refund->currency,
+                        'amount'   => $refund->total
+                    );
+                }
+
+                self::send_event(
+                    self::maybe_get_user_id_from_order( $refund ),
+                    '$DownloadRefunded',
+                    $refund->email,
+                    $details
+                );
+            },
+            10,
+            3
+        );
     }
 
     /**
