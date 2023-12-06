@@ -90,9 +90,6 @@ class EDD_Bento_Events extends Bento_Events_Controller {
                 'product_price'         => $item->amount,
                 'product_sku'           => $download->get_sku(),
                 'quantity'              => $item->quantity,
-                'line_total'            => $item->total,
-                'line_tax'              => $item->tax,
-                'line_subtotal'         => $item->subtotal,
             );
         }
 
