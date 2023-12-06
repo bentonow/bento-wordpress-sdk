@@ -125,6 +125,8 @@ class WooCommerce_Bento_Events extends Bento_Events_Controller {
     /**
      * Prepare the cart items.
      *
+     * @param WC_Order $order The order object.
+     *
      * @return void
      */
     protected static function get_cart_items( $order ) {
