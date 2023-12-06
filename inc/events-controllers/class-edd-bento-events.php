@@ -71,16 +71,20 @@ class EDD_Bento_Events extends Bento_Events_Controller {
     /**
      * Prepare the download details.
      *
-     * @param Order $order The order object.
+     * @param Order  $order The order object.
+     * @param string $key   Unique order key.
      *
      * @return mixed
      */
-    protected static function prepare_download_event_details( $order ) {
+    protected static function prepare_download_event_details( $order, $key = null ) {
         if ( ! $order ) {
             return null;
         }
 
         $details = array(
+            'unique' => array(
+                'key' => $key ? $key : $order->get_number(),
+            ),
             'cart' => array(
                 'items' => self::get_cart_items( $order ),
             ),
