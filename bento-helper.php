@@ -3,12 +3,12 @@
  * Plugin Name: Bento Helper
  * Plugin URI: https://github.com/bentonow/bento-wordpress-sdk
  * Description: Email marketing, live chat, and analytics for WooCommerce stores.
- * Version: 1.0.1
+ * Version: 2.0.0
  * Author: Bento
  * Author URI: https://bentonow.com
  * Text Domain: bentonow
  * WC requires at least: 2.6.0
- * WC tested up to: 4.2.0.
+ * WC tested up to: 8.3.1
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -19,7 +19,7 @@ class Bento_Helper {
 	 *
 	 * @var string
 	 */
-	public $version = '1.0.1';
+	public $version = '2.0.0';
 
 	/**
 	 * URL dir for plugin.
@@ -55,6 +55,7 @@ class Bento_Helper {
 	 */
 	public function __construct() {
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
+		add_action( 'before_woocommerce_init', array( $this, 'woocommerce_declare_hpos_support' ) );
 
 		// Set URL.
 		$this->url = plugin_dir_url( __FILE__ );
@@ -69,17 +70,14 @@ class Bento_Helper {
 
 		if ( class_exists( 'WooCommerce' ) ) {
 			require_once 'inc/ajax.php';
-			require_once 'inc/orders.php';
 		}
 
 		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
 
-		// load events controllers only if LearnDash is active.
-		if ( defined( 'LEARNDASH_VERSION' ) ) {
-			require_once 'inc/class-bento-events-controller.php';
-			Bento_Events_Controller::init();
-		}
+		// Setup events controllers.
+		require_once 'inc/class-bento-events-controller.php';
+		Bento_Events_Controller::init();
 
 		// Plugin textdomain.
 		load_plugin_textdomain(
@@ -126,6 +124,17 @@ class Bento_Helper {
 
 			// Disable notice option.
 			update_option( 'bento_show_activation_notice', false );
+		}
+	}
+
+	/**
+	 * Confirm WooCommerce support for HPOS.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_declare_hpos_support() {
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 		}
 	}
 }

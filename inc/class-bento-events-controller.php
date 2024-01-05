@@ -78,12 +78,13 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * Send an event to Bento.
 		 *
 		 * @param int    $user_id The user ID that generates the event.
-		 * @param string $type The event type.
-		 * @param string $email The email event is for.
+		 * @param string $type    The event type.
+		 * @param string $email   The email event is for.
 		 * @param array  $details The event details.
+		 *
 		 * @return bool True if event was sent successfully.
 		 */
-		private static function send_event( $user_id, $type, $email, $details = array() ) {
+		protected static function send_event( $user_id, $type, $email, $details = array() ) {
 			$bento_site_key = self::get_bento_option( 'bento_site_key' );
 			if ( empty( $bento_site_key ) ) {
 				return;
@@ -243,6 +244,9 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			$controllers = array(
 				'class-wp-bento-events',
 				'class-learndash-bento-events',
+				'class-woocommerce-bento-events',
+				'class-woocommerce-subscriptions-bento-events',
+				'class-edd-bento-events',
 			);
 
 			foreach ( $controllers as $controller ) {
