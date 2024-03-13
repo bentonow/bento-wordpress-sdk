@@ -114,14 +114,18 @@ class Bento_Helper {
 	}
 
 	/**
-	 * Activate notice (if we should).
+	 * Activation notice for onboarding at first activation or if site key is not set.
 	 */
 	public function activate_notice() {
-		if ( get_option( 'bento_show_activation_notice', false ) ) {
-			echo '<div class="notice notice-success"><p>' .
-			sprintf( __( 'The Bento WordPress SDK is active!' ) ) .
-			'</p></div>';
 
+		$settings = get_option( 'bento_settings' );
+		$site_key = !empty( $settings['bento_site_key'] ) ? $settings['bento_site_key'] : false;
+
+		if ( get_option( 'bento_show_activation_notice', false ) || ! $site_key) {
+			echo '<div class="notice notice-success">
+			<p>' . sprintf( __( 'Welcome to Bento! To get started, please <a href="%s">configure your settings</a> and connect your Bento account.', 'bentonow' ), 
+			esc_url( admin_url( 'admin.php?page=bento-setting-admin' ) ) ) . '</p>
+		  </div>';
 			// Disable notice option.
 			update_option( 'bento_show_activation_notice', false );
 		}
