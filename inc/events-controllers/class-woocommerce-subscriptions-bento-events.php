@@ -147,9 +147,6 @@ if ( class_exists( 'WC_Subscriptions' ) && ! class_exists( 'WooCommerce_Subscrip
             $order = $subscription->get_last_order( 'all' );
 
             $details = array(
-                'unique' => array(
-                    'key' => $order->get_order_key(),
-                ),
                 'subscription' => array(
                     'id'     => $subscription->get_id(),
                     'status' => $subscription->get_status(),
@@ -158,6 +155,11 @@ if ( class_exists( 'WC_Subscriptions' ) && ! class_exists( 'WooCommerce_Subscrip
                     ),
                 ),
             );
+			if ( $order ) {
+				$details['unique'] = array(
+					'key' => $order->get_order_key(),
+				);
+			}
 
             return $details;
         }
