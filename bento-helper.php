@@ -19,7 +19,7 @@ class Bento_Helper {
 	 *
 	 * @var string
 	 */
-	public $version = '2.0.0';
+	public $version = '2.0.1';
 
 	/**
 	 * URL dir for plugin.
