@@ -78,8 +78,6 @@ class Bento_Helper {
 		// Setup events controllers.
 		require_once 'inc/class-bento-events-controller.php';
 
-		
-
 		Bento_Events_Controller::init();
 
 		// Add Bento form action to Elementor Pro.
@@ -89,6 +87,55 @@ class Bento_Helper {
 				$form_actions_registrar->register( new Bento_Action_After_Submit() );
 			});
 		}
+
+		add_action( 'bricks/form/custom_action', function( $form ) {
+			$fields = $form->get_fields();
+			$formId = $fields['formId'];
+			$postId = $fields['postId'];
+			$settings = $form->get_settings();
+
+			$event_name = '$bricks_submission.form_id_' . $formId . '.post_id_' . $postId;
+
+			$custom_fields = array_merge(
+				array_filter($fields, function($key) {
+					return strpos($key, 'form-field') !== 0;
+				}, ARRAY_FILTER_USE_KEY),
+				[
+					'bricks_last_form_id' => $formId,
+					'bricks_last_post_id' => $postId
+				]
+			);
+
+			// Remove 'bento_' prefix from keys
+			$custom_fields = array_combine(
+				array_map(function($key) {
+					return (strpos($key, 'bento_') === 0) ? substr($key, 6) : $key;
+				}, array_keys($custom_fields)),
+				array_values($custom_fields)
+			);
+
+			// remove nonce, action, formId, postId
+			unset($custom_fields['nonce']);
+			unset($custom_fields['action']);
+			unset($custom_fields['formId']);
+			unset($custom_fields['postId']);
+
+			$email = $custom_fields['email'];
+			unset($custom_fields['email']);
+
+			if (isset($custom_fields['event']) && !empty($custom_fields['event'])) {
+				$event_name = $custom_fields['event'];
+				unset($custom_fields['event']);
+			}
+
+			Bento_Events_Controller::trigger_event(
+				null,
+				$event_name,
+				$email, 
+				$fields,
+				$custom_fields
+			);
+		}, 10, 1 );
 		
 		// Plugin textdomain.
 		load_plugin_textdomain(
