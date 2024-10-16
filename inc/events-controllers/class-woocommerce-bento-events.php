@@ -42,30 +42,6 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                     );
                 }
             );
-            
-            # Handles the old checkout.
-            add_action(
-                'woocommerce_checkout_order_created',
-                function( $order_id ) {
-                    $order   = wc_get_order( $order_id );
-                    $user_id = self::maybe_get_user_id_from_order( $order );
-                    $details = self::prepare_order_event_details( $order );
-
-                    if ( $order->get_total() > 0 ) {
-                        $details['value'] = array(
-                            'currency' => $order->get_currency(),
-                            'amount'   => $order->get_total(),
-                        );
-                    }
-
-                    self::send_event(
-                        $user_id,
-                        '$OrderPlaced',
-                        $order->get_billing_email(),
-                        $details
-                    );
-                }
-            );
 
             add_action(
                 'woocommerce_order_refunded',
