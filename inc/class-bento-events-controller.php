@@ -74,6 +74,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 		}
 
+		public static function trigger_event($user_id, $type, $email, $details = array(), $custom_fields = array()) {
+			return self::send_event($user_id, $type, $email, $details, $custom_fields);
+		}
+
 		/**
 		 * Send an event to Bento.
 		 *
@@ -84,7 +88,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 *
 		 * @return bool True if event was sent successfully.
 		 */
-		protected static function send_event( $user_id, $type, $email, $details = array() ) {
+		protected static function send_event( $user_id, $type, $email, $details = array(), $custom_fields = array() ) {
 			$bento_site_key = self::get_bento_option( 'bento_site_key' );
 			$bento_publishable_key = self::get_bento_option( 'bento_publishable_key' );
 			$bento_secret_key = self::get_bento_option( 'bento_secret_key' );
@@ -112,6 +116,14 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 			if (!empty($user_fields)) {
 				$data['events'][0]['fields'] = $user_fields;
+			}
+
+			if (!empty($custom_fields)) {
+				if (isset($data['events'][0]['fields']) && is_array($data['events'][0]['fields'])) {
+					$data['events'][0]['fields'] = array_merge($data['events'][0]['fields'], $custom_fields);
+				} else {
+					$data['events'][0]['fields'] = $custom_fields;
+				}
 			}
 
 			$response = wp_remote_post(
@@ -268,13 +280,13 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				'class-woocommerce-bento-events',
 				'class-woocommerce-subscriptions-bento-events',
 				'class-edd-bento-events',
-				'class-elementor-bento-events',
 			);
 
 			foreach ( $controllers as $controller ) {
 				require_once 'events-controllers/' . $controller . '.php';
 			}
 		}
+		
 
 	}
 }

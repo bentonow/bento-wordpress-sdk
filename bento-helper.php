@@ -77,8 +77,19 @@ class Bento_Helper {
 
 		// Setup events controllers.
 		require_once 'inc/class-bento-events-controller.php';
+
+		
+
 		Bento_Events_Controller::init();
 
+		// Add Bento form action to Elementor Pro.
+		if ( defined('ELEMENTOR_PRO_VERSION') ) {
+			add_action( 'elementor_pro/forms/actions/register', function( $form_actions_registrar ) {
+				include_once( __DIR__ .  '/form-actions/bento.php' );
+				$form_actions_registrar->register( new Bento_Action_After_Submit() );
+			});
+		}
+		
 		// Plugin textdomain.
 		load_plugin_textdomain(
 			'bentonow',
@@ -154,4 +165,7 @@ function bento_helper() {
 	return Bento_Helper::instance();
 }
 
+
 bento_helper();
+
+
