@@ -128,13 +128,15 @@ class Bento_Helper {
 				unset($custom_fields['event']);
 			}
 
-			Bento_Events_Controller::trigger_event(
-				null,
-				$event_name,
-				$email, 
-				$fields,
-				$custom_fields
-			);
+			if (!empty($email)) {
+				Bento_Events_Controller::trigger_event(
+					null,
+					$event_name,
+					$email, 
+					$fields,
+					$custom_fields
+				);
+			}
 		}, 10, 1 );
 		
 		// Plugin textdomain.
