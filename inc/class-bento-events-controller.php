@@ -268,6 +268,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				'class-woocommerce-bento-events',
 				'class-woocommerce-subscriptions-bento-events',
 				'class-edd-bento-events',
+				'class-elementor-bento-events',
 			);
 
 			foreach ( $controllers as $controller ) {
