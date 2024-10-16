@@ -73,7 +73,7 @@ class BentoSettingsPage {
 
 		add_settings_section(
 			'bento_setting_section_id', // ID.
-			esc_html__( 'Bento API Keys', 'bentonow' ), // Title.
+			esc_html__( 'Connection', 'bentonow' ), // Title.
 			function() {
 				echo '<p>' . esc_html__( 'You can find your API keys at ', 'bentonow' ) . '<a href="https://app.bentonow.com/account/teams" target="_blank">' . esc_html__( 'https://app.bentonow.com/account/teams', 'bentonow' ) . '</a>. ' . esc_html__( 'If you have trouble finding them, please contact our support.', 'bentonow' ) . '</p>';
 			}, // Callback.
@@ -124,7 +124,7 @@ class BentoSettingsPage {
 		// Add this new settings field after the existing API key fields
 		add_settings_field(
 			'bento_enable_tracking', // ID
-			esc_html__( 'Enable Site Tracking', 'bentonow' ), // Title
+			esc_html__( 'User Tracking', 'bentonow' ), // Title
 			array( $this, 'bento_setting_field_callback' ), // Callback
 			'bento-setting-admin', // Page
 			'bento_setting_section_id', // Section
@@ -132,7 +132,7 @@ class BentoSettingsPage {
 				'id'    => 'bento_enable_tracking',
 				'value' => $this->options['bento_enable_tracking'] ?? '0',
 				'type'  => 'checkbox',
-				'label' => esc_html__( 'Enable Bento site tracking', 'bentonow' ),
+				'label' => esc_html__( 'Enable Bento site tracking and Bento.js', 'bentonow' ),
 			)
 		);
 
