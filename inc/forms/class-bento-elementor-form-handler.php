@@ -15,9 +15,11 @@ class Bento_Elementor_Form_Handler {
      * Initialize the handler.
      */
     public static function init() {
-        if ( defined('ELEMENTOR_PRO_VERSION') ) {
-            add_action( 'elementor_pro/forms/actions/register', array( self::class, 'register_form_action' ) );
+        if ( ! defined( 'ELEMENTOR_PRO_VERSION' ) ) {
+            return;
         }
+        
+        add_action( 'elementor_pro/forms/actions/register', array( self::class, 'register_form_action' ) );
     }
 
     /**
