@@ -17,6 +17,14 @@ Download and install this package as a plugin, then add your site key. You're do
 
 For now, Bento's script is personalized and dynamic meaning that it changes on every page load. This is necessary to power our on-page personalization engine and a lot of the magic that's under the hood. Please make sure you exclude your custom Bento.js script if you are using a caching plugin such as WP Rocket or SuperCache.
 
+## Integrations
+1. WooCommerce and WooCommerce Subscriptions (event listener - see below)
+2. LearnDash (event listener - see below)
+3. Easy Digital Downloads (event listener - see below)
+4. Elementor Forms (native integration)
+5. WPForms (native integration)
+5. Bricks Forms (native integration)
+
 ## Events
 
 ### WooCommerce
