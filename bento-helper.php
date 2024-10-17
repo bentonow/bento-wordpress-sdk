@@ -74,71 +74,17 @@ class Bento_Helper {
 
 		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
-
-		// Setup events controllers.
 		require_once 'inc/class-bento-events-controller.php';
+		require_once 'inc/forms/class-bento-bricks-form-handler.php';
+		require_once 'inc/forms/class-bento-elementor-form-handler.php';
 
+		// Here we load up all the automated event handlers.
 		Bento_Events_Controller::init();
 
-		// Add Bento form action to Elementor Pro.
-		if ( defined('ELEMENTOR_PRO_VERSION') ) {
-			add_action( 'elementor_pro/forms/actions/register', function( $form_actions_registrar ) {
-				include_once( __DIR__ .  '/form-actions/bento.php' );
-				$form_actions_registrar->register( new Bento_Action_After_Submit() );
-			});
-		}
+		// Here we load up all the different form handlers.
+		Bento_Bricks_Form_Handler::init(); # 
+		Bento_Elementor_Form_Handler::init();
 
-		add_action( 'bricks/form/custom_action', function( $form ) {
-			$fields = $form->get_fields();
-			$formId = $fields['formId'];
-			$postId = $fields['postId'];
-			$settings = $form->get_settings();
-
-			$event_name = '$bricks_submission.form_id_' . $formId . '.post_id_' . $postId;
-
-			$custom_fields = array_merge(
-				array_filter($fields, function($key) {
-					return strpos($key, 'form-field') !== 0;
-				}, ARRAY_FILTER_USE_KEY),
-				[
-					'bricks_last_form_id' => $formId,
-					'bricks_last_post_id' => $postId
-				]
-			);
-
-			// Remove 'bento_' prefix from keys
-			$custom_fields = array_combine(
-				array_map(function($key) {
-					return (strpos($key, 'bento_') === 0) ? substr($key, 6) : $key;
-				}, array_keys($custom_fields)),
-				array_values($custom_fields)
-			);
-
-			// remove nonce, action, formId, postId
-			unset($custom_fields['nonce']);
-			unset($custom_fields['action']);
-			unset($custom_fields['formId']);
-			unset($custom_fields['postId']);
-
-			$email = $custom_fields['email'];
-			unset($custom_fields['email']);
-
-			if (isset($custom_fields['event']) && !empty($custom_fields['event'])) {
-				$event_name = $custom_fields['event'];
-				unset($custom_fields['event']);
-			}
-
-			if (!empty($email)) {
-				Bento_Events_Controller::trigger_event(
-					null,
-					$event_name,
-					$email, 
-					$fields,
-					$custom_fields
-				);
-			}
-		}, 10, 1 );
-		
 		// Plugin textdomain.
 		load_plugin_textdomain(
 			'bentonow',
