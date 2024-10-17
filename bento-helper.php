@@ -85,6 +85,10 @@ class Bento_Helper {
 		Bento_Bricks_Form_Handler::init(); # 
 		Bento_Elementor_Form_Handler::init();
 
+		if ( class_exists( 'WPForms' ) ) {
+			require_once 'inc/forms/class-wp-forms-form-handler.php';
+		}
+
 		// Plugin textdomain.
 		load_plugin_textdomain(
 			'bentonow',
