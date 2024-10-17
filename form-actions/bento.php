@@ -76,6 +76,7 @@ class Bento_Action_After_Submit extends \ElementorPro\Modules\Forms\Classes\Acti
 				'label' => esc_html__( 'Email Field ID', 'elementor-forms-bento-action' ),
 				'type' => \Elementor\Controls_Manager::TEXT,
 				'default' => 'email',
+				'description' => esc_html__( 'The ID of the field that contains the email address (edit the field and find it under "Advanced" tab). We very strongly recommend LOWERCASE and UNDERSCORED ID names.', 'elementor-forms-bento-action' ),
 			]
 		);
 
@@ -87,6 +88,7 @@ class Bento_Action_After_Submit extends \ElementorPro\Modules\Forms\Classes\Acti
 				'default' => '',
 				'label_on' => esc_html__( 'Yes', 'elementor-forms-bento-action' ),
 				'label_off' => esc_html__( 'No', 'elementor-forms-bento-action' ),
+				'description' => esc_html__( 'This will map the all form fields as custom fields on the user sent to Bento. The ID will be used as the field name and the value will be used as the field value.', 'elementor-forms-bento-action' ),
 			]
 		);
 

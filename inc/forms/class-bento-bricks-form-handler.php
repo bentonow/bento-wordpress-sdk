@@ -15,10 +15,6 @@ class Bento_Bricks_Form_Handler {
      * Initialize the handler.
      */
     public static function init() {
-        if ( ! defined( 'BRICKS_VERSION' ) ) {
-            return;
-        }
-
         add_action( 'bricks/form/custom_action', array( self::class, 'handle_form_submission' ), 10, 1 );
     }
 
