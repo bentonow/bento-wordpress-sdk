@@ -77,14 +77,15 @@ class Bento_Helper {
 		require_once 'inc/class-bento-events-controller.php';
 		require_once 'inc/forms/class-bento-bricks-form-handler.php';
 		require_once 'inc/forms/class-bento-elementor-form-handler.php';
-
+		require_once 'inc/forms/class-bento-thrive-themes-events.php';
+		
 		// Here we load up all the automated event handlers.
 		Bento_Events_Controller::init();
 
 		// Here we load up all the different form handlers.
 		Bento_Bricks_Form_Handler::init(); # 
 		Bento_Elementor_Form_Handler::init();
-
+	
 		if ( class_exists( 'WPForms' ) ) {
 			require_once 'inc/forms/class-wp-forms-form-handler.php';
 		}
