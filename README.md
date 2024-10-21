@@ -1,7 +1,7 @@
 # Bento SDK for WordPress & WooCommerce!
 [![Build Status](https://travis-ci.org/bentonow/bento-wordpress-sdk.svg?branch=master)](https://travis-ci.org/bentonow/bento-wordpress-sdk)
 
-🍱 Simple, powerful eCommerce analytics for WordPress & WooCommerce projects!
+🍱 Simple, powerful email marketing for WordPress websites.
 
 Track events, update data, record LTV and more. Data is stored in your Bento account so you can easily research and investigate what's going on.
 
@@ -20,7 +20,11 @@ Track events, update data, record LTV and more. Data is stored in your Bento acc
 
 ## Installation
 
-Download and install this package as a plugin, then add your site key. You're done!
+Download and install this package as a plugin then add your personal API keys and site key.
+
+## Auto-updates
+
+This plugin does not auto-update.
 
 ## About Caching (Please Read)
 
