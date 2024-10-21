@@ -22,11 +22,12 @@ class Bento_Custom
   {
     $bento_options = get_option('bento_settings');
     $bento_site_key = $bento_options['bento_site_key'];
-
-    if (empty($bento_site_key)) {
+    $bento_enable_tracking = isset($bento_options['bento_enable_tracking']) ? $bento_options['bento_enable_tracking'] : '0';
+    
+    if (empty($bento_site_key) || empty($bento_enable_tracking) || $bento_enable_tracking === '0') {
       return;
     }
-
+    
     wp_enqueue_script(
       'bento-js',
       "https://app.bentonow.com/{$bento_site_key}.js?woocommerce=1",

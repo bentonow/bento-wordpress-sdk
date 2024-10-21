@@ -19,8 +19,9 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
          * @return void
          */
         public function __construct() {
+            # Handles the new block checkout.
             add_action(
-                'woocommerce_checkout_order_created',
+                'woocommerce_new_order',
                 function( $order_id ) {
                     $order   = wc_get_order( $order_id );
                     $user_id = self::maybe_get_user_id_from_order( $order );

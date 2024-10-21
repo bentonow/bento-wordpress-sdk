@@ -3,7 +3,7 @@
  * Plugin Name: Bento Helper
  * Plugin URI: https://github.com/bentonow/bento-wordpress-sdk
  * Description: Email marketing, live chat, and analytics for WooCommerce stores.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Bento
  * Author URI: https://bentonow.com
  * Text Domain: bentonow
@@ -19,7 +19,7 @@ class Bento_Helper {
 	 *
 	 * @var string
 	 */
-	public $version = '2.0.0';
+	public $version = '2.0.1';
 
 	/**
 	 * URL dir for plugin.
@@ -74,10 +74,21 @@ class Bento_Helper {
 
 		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
-
-		// Setup events controllers.
 		require_once 'inc/class-bento-events-controller.php';
+		require_once 'inc/forms/class-bento-bricks-form-handler.php';
+		require_once 'inc/forms/class-bento-elementor-form-handler.php';
+		require_once 'inc/forms/class-bento-thrive-themes-events.php';
+		
+		// Here we load up all the automated event handlers.
 		Bento_Events_Controller::init();
+
+		// Here we load up all the different form handlers.
+		Bento_Bricks_Form_Handler::init(); # 
+		Bento_Elementor_Form_Handler::init();
+	
+		if ( class_exists( 'WPForms' ) ) {
+			require_once 'inc/forms/class-wp-forms-form-handler.php';
+		}
 
 		// Plugin textdomain.
 		load_plugin_textdomain(
@@ -154,4 +165,7 @@ function bento_helper() {
 	return Bento_Helper::instance();
 }
 
+
 bento_helper();
+
+

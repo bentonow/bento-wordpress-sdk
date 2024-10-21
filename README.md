@@ -1,21 +1,43 @@
 # Bento SDK for WordPress & WooCommerce!
 [![Build Status](https://travis-ci.org/bentonow/bento-wordpress-sdk.svg?branch=master)](https://travis-ci.org/bentonow/bento-wordpress-sdk)
 
-🍱 Simple, powerful eCommerce analytics for WordPress & WooCommerce projects!
+🍱 Simple, powerful email marketing for WordPress websites.
 
 Track events, update data, record LTV and more. Data is stored in your Bento account so you can easily research and investigate what's going on.
 
 👋 To get personalized support, please tweet @bento or email jesse@bentonow.com!
 
-🐶 Battle-tested on Bento Production!
+🐶 Tested last on WordPress 6.6.2 and WooCommerce 9.3.3.
+
+> [!IMPORTANT]  
+> Please install the Bento plugin on a development or staging site before using it in production. This ensures that all your plugins are compatible and there are no conflicts. Additionally, make sure you have a recent backup handy. Whilst we've tested this plugin on clean installs of WordPress, we can't guarantee there will be no issues due to the nature of the WordPress ecosystem. Use at your own risk (which you can mitigate with testing on a staging site and backing up properly!).
+
+## Requirements
+
+- Bento account and your API keys
+- Latest version of WordPress
+- Any of the plugins listed below
 
 ## Installation
 
-Download and install this package as a plugin, then add your site key. You're done!
+Download and install this package as a plugin then add your personal API keys and site key.
+
+## Auto-updates
+
+This plugin does not auto-update.
 
 ## About Caching (Please Read)
 
 For now, Bento's script is personalized and dynamic meaning that it changes on every page load. This is necessary to power our on-page personalization engine and a lot of the magic that's under the hood. Please make sure you exclude your custom Bento.js script if you are using a caching plugin such as WP Rocket or SuperCache.
+
+## Integrations
+1. WooCommerce and WooCommerce Subscriptions (event listener - see below)
+2. LearnDash (event listener - see below)
+3. Easy Digital Downloads (event listener - see below)
+4. Elementor Forms (native integration)
+5. WPForms (native integration)
+6. Bricks Forms (native integration)
+7. ThriveLeads (native integration)
 
 ## Events
 
@@ -81,6 +103,98 @@ When a download is downloaded by a user.
 #### `$DownloadRefunded`
 
 When a download is refunded, either partially or full.
+
+
+### LearnDash
+
+#### `$CourseCompleted`
+
+When a user completes a course.
+
+#### `$LessonCompleted`
+
+When a user completes a lesson.
+
+#### `$TopicCompleted`
+
+When a user completes a topic.
+
+#### `$QuizCompleted`
+
+When a user completes a quiz.
+
+#### `$EssayGraded`
+
+When a user's essay has been graded.
+
+#### `$AssignmentApproved`
+
+When a user's assignment has been approved.
+
+#### `$AssignmentNewComment`
+
+When a new comment is added to a user's assignment.
+
+#### `$UserEnrolledInCourse`
+
+When a user enrolls in a course.
+
+#### `$UserEnrolledInGroup`
+
+When a user is enrolled in a group.
+
+#### `$UserPurchasedCourse`
+
+When a user purchases a course.
+
+#### `$UserPurchasedGroup`
+
+When a user purchases a group.
+
+#### `$UserEarnedNewCertificate`
+
+When a user earns a new certificate.
+
+#### `$CourseNotCompleted`
+
+When a user has not completed a course within a specified time frame.
+
+#### `$LessonNotCompleted`
+
+When a user has not completed a lesson within a specified time frame.
+
+#### `$TopicNotCompleted`
+
+When a user has not completed a topic within a specified time frame.
+
+#### `$QuizNotCompleted`
+
+When a user has not completed a quiz within a specified time frame.
+
+#### `$DripContent`
+
+When content becomes available to a user due to drip-feeding.
+
+### Elementor Forms
+
+#### Custom Events
+
+You can choose your own custom event name for any form submission. Just pick "Bento" in "Actions After Submit" and configure it like any other action.
+
+### WPForms
+
+The WPForm integration will send in custom events using the name of the form as the event name.
+
+### Bricks Forms
+
+Guide coming soon.
+
+### ThriveLeads Events
+
+The ThriveLeads integration allows you to create a connection to Bento and will send in custom events for all form submissions. The naming convention for these events is:
+
+`$thrive.optin.{form_identifier}` which will look something like `$thrive.optin.fancy-optin-shortcode-form-v6n9w1`.
+
 
 ## Licence
 

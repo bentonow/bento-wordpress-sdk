@@ -12,7 +12,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 	 * Class Bento_Events_Controller
 	 */
 	class Bento_Events_Controller {
-		const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/tracking/generic';
+		const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/api/v1/batch/events';
 		const EVENTS_QUEUE_OPTION_KEY         = 'bento_events_queue';
 		const IS_SENDING_EVENTS_TRANSIENT_KEY = 'bento_sending_events';
 
@@ -74,6 +74,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 		}
 
+		public static function trigger_event($user_id, $type, $email, $details = array(), $custom_fields = array()) {
+			return self::send_event($user_id, $type, $email, $details, $custom_fields);
+		}
+
 		/**
 		 * Send an event to Bento.
 		 *
@@ -84,22 +88,46 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 *
 		 * @return bool True if event was sent successfully.
 		 */
-		protected static function send_event( $user_id, $type, $email, $details = array() ) {
+		protected static function send_event( $user_id, $type, $email, $details = array(), $custom_fields = array() ) {
 			$bento_site_key = self::get_bento_option( 'bento_site_key' );
-			if ( empty( $bento_site_key ) ) {
+			$bento_publishable_key = self::get_bento_option( 'bento_publishable_key' );
+			$bento_secret_key = self::get_bento_option( 'bento_secret_key' );
+			
+			if ( empty( $bento_site_key ) || empty( $bento_publishable_key ) || empty( $bento_secret_key ) ) {
 				return;
 			}
 
+			$api_url = 'https://' . $bento_publishable_key . ':' . $bento_secret_key . '@' . substr(self::BENTO_API_EVENT_ENDPOINT, 8) . '?site_uuid=' . $bento_site_key;
+
 			$data = array(
-				'site'    => $bento_site_key,
-				'type'    => $type,
-				'email'   => $email,
-				'details' => $details,
-				'fields'  => self::get_user_fields( $user_id ),
+				'events' => array(
+					array(
+						'type'  => $type,
+						'email' => $email,
+					)
+				)
 			);
 
-			$response      = wp_remote_post(
-				self::BENTO_API_EVENT_ENDPOINT,
+			if (!empty($details)) {
+				$data['events'][0]['details'] = $details;
+			}
+
+			$user_fields = self::get_user_fields($user_id);
+
+			if (!empty($user_fields)) {
+				$data['events'][0]['fields'] = $user_fields;
+			}
+
+			if (!empty($custom_fields)) {
+				if (isset($data['events'][0]['fields']) && is_array($data['events'][0]['fields'])) {
+					$data['events'][0]['fields'] = array_merge($data['events'][0]['fields'], $custom_fields);
+				} else {
+					$data['events'][0]['fields'] = $custom_fields;
+				}
+			}
+
+			$response = wp_remote_post(
+				$api_url,
 				array(
 					'headers'     => array( 'Content-Type' => 'application/json; charset=utf-8' ),
 					'body'        => wp_json_encode( $data ),
@@ -107,6 +135,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 					'data_format' => 'body',
 				)
 			);
+
 			$response_body = wp_remote_retrieve_body( $response );
 
 			return 'OK' === $response_body;
@@ -124,8 +153,12 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			}
 
 			$user = get_user_by( 'id', absint( $user_id ) );
+
 			if ( empty( $user ) ) {
-				return array();
+				$fields = array(
+					'user_roles'   => 'guest',
+				);
+				return $fields;
 			}
 
 			$fields = array(
@@ -253,6 +286,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				require_once 'events-controllers/' . $controller . '.php';
 			}
 		}
+		
 
 	}
 }
