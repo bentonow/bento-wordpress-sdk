@@ -15,7 +15,8 @@ Track events, update data, record LTV and more. Data is stored in your Bento acc
 ## Requirements
 
 - Bento account and your API keys
-- WordPress or WooCommerce site (latest versions recommended)
+- Latest version of WordPress
+- Any of the plugins listed below
 
 ## Installation
 
