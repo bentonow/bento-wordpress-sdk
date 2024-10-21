@@ -7,7 +7,7 @@ Track events, update data, record LTV and more. Data is stored in your Bento acc
 
 👋 To get personalized support, please tweet @bento or email jesse@bentonow.com!
 
-🐶 Battle-tested on Bento Production!
+🐶 Tested last on WordPress 6.6.2 and WooCommerce 9.3.3.
 
 > [!IMPORTANT]  
 > Please install the Bento plugin on a development or staging site before using it in production. This ensures that all your plugins are compatible and there are no conflicts. Additionally, make sure you have a recent backup handy. Whilst we've tested this plugin on clean installs of WordPress, we can't guarantee there will be no issues due to the nature of the WordPress ecosystem. Use at your own risk (which you can mitigate with testing on a staging site and backing up properly!).
