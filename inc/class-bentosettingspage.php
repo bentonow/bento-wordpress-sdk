@@ -48,6 +48,7 @@ class BentoSettingsPage {
 	public function create_admin_page() {
 		?>
 		<div class="wrap">
+			<img src="https://bentonow.com/characters/no-messages.png" alt="Bento Character" style="float: right; margin-left: 20px; max-width: 200px;">
 			<h1><?php esc_html_e( 'Bento Settings', 'bentonow' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php
