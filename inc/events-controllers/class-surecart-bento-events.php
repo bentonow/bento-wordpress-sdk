@@ -99,8 +99,10 @@ if ( class_exists( 'SureCart' ) && ! class_exists( 'SureCart_Bento_Events', fals
                 'unique' => array(
                     'key' => $checkout->id,
                 ),
-                'amount' => $checkout->total_amount,
-                'currency' => $checkout->currency,
+                'value' => array(
+                    'amount' => $checkout->total_amount,
+                    'currency' => $checkout->currency,
+                ),
                 'status' => $checkout->status,
             );
 
