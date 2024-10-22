@@ -38,6 +38,7 @@ For now, Bento's script is personalized and dynamic meaning that it changes on e
 5. WPForms (native integration)
 6. Bricks Forms (native integration)
 7. ThriveLeads (native integration)
+8. SureCart (event listener - see below)
 
 ## Events
 
@@ -89,6 +90,12 @@ When the trial period of a subscription has reached its end date.
 #### `$SubscriptionRenewed`
 
 When a subscription renewal payment is processed.
+
+### SureCart
+
+#### `$CheckoutConfirmed`
+
+When a checkout is completed (paid). Contains all metadata from the checkout and user info.
 
 ### Easy Digital Downloads
 
