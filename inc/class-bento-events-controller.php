@@ -278,6 +278,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				'class-wp-bento-events',
 				'class-learndash-bento-events',
 				'class-woocommerce-bento-events',
+				'class-surecart-bento-events',
 				'class-woocommerce-subscriptions-bento-events',
 				'class-edd-bento-events',
 			);
