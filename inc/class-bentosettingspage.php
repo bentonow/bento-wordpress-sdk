@@ -256,7 +256,7 @@ class BentoSettingsPage {
             'bento_email_section_id', // ID
             esc_html__( 'Transactional Email Settings', 'bentonow' ), // Title
             function() {
-                echo '<p>' . esc_html__( "Configure Transactional emails to be sent via Bento.") .'<br><br>' . "Bento Transactional Email API is designed to send <b>low volume emails from plugins (such as password resets, order notifications, etc),</b> it is not designed for high volume/frequent sending (such as newsletter plugins). Please use Bento's main application for that activity to avoid the aggressive rate limits that we've put in place to stop abuse.<br /><br />Please be aware that bento does not support email attachements of any kind at this time. <br /> Emails with attachments will continue to use the email provider configured in wp_mail" . '</p>';
+                echo '<p>' . esc_html__( "Configure Transactional emails to be sent via Bento.") .'<br><br>' . "Bento Transactional Email API is designed to send <b>low volume emails from plugins (such as password resets, order notifications, etc),</b> it is not designed for high volume/frequent sending (such as newsletter plugins). Please use Bento's main application for that activity to avoid the aggressive rate limits that we've put in place to stop abuse.<br /><br />Please be aware that bento does not support email attachements of any kind at this time. <br /> Emails with attachments will continue to use the email provider configured in wp_mail. <br />You can read the quick setup guide here <a href='https://docs.bentonow.com/migrations/wordpress_transactional'>https://docs.bentonow.com/</a>" . '</p>';
             }, // Callback
             'bento-setting-admin' // Page
         );
