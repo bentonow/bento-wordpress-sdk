@@ -276,6 +276,20 @@ class BentoSettingsPage {
         );
 
         add_settings_field(
+            'bento_transactional_override',
+            esc_html__( 'Transactional Override', 'bentonow' ),
+            array( $this, 'bento_setting_field_callback' ),
+            'bento-setting-admin',
+            'bento_email_section_id',
+            array(
+                'id'    => 'bento_transactional_override',
+                'value' => $this->options['bento_transactional_override'] ?? '0',
+                'type'  => 'checkbox',
+                'label' => esc_html__( 'Send emails to all users including unsubscribes in Bento. Use with caution', 'bentonow' ),
+            )
+        );
+
+        add_settings_field(
             'bento_from_email',
             esc_html__('Bento Author', 'bentonow'),
             array($this, 'render_authors_dropdown'),
@@ -331,6 +345,8 @@ class BentoSettingsPage {
 
 		// Add this new sanitization for the tracking option
 		$new_input['bento_enable_tracking'] = isset( $input['bento_enable_tracking'] ) ? '1' : '0';
+
+        $new_input['bento_transactional_override'] = isset( $input['bento_transactional_override'] ) ? '1' : '0';
 
         if ( isset( $input['bento_enable_transactional'] ) ) {
             $new_input['bento_enable_transactional'] = '1';

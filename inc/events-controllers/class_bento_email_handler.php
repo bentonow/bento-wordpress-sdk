@@ -162,6 +162,7 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         $bento_publishable_key = $options['bento_publishable_key'] ?? '';
         $bento_secret_key = $options['bento_secret_key'] ?? '';
         $from_email = $options['bento_from_email'] ?? get_option('admin_email');
+        $transactional_override = !empty($options['bento_transactional_override']) && $options['bento_transactional_override'] === '1';
 
         if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
             error_log('Bento Email Handler: Sending via API');
@@ -188,7 +189,7 @@ class Bento_Email_Handler extends Bento_Events_Controller {
                     'from' => $from_email,
                     'subject' => $email_data['subject'],
                     'html_body' => $email_data['message'],
-                    'transactional' => true
+                    'transactional' => $transactional_override
                 )
             )
         );
