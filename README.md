@@ -1,9 +1,9 @@
 # Bento SDK for WordPress & WooCommerce!
 [![Build Status](https://travis-ci.org/bentonow/bento-wordpress-sdk.svg?branch=master)](https://travis-ci.org/bentonow/bento-wordpress-sdk)
 
-🍱 Simple, powerful email marketing for WordPress websites.
+🍱 Simple, powerful email marketing and transactional email for WordPress websites.
 
-Track events, update data, record LTV and more. Data is stored in your Bento account so you can easily research and investigate what's going on.
+Track events, update data, record LTV, send triggered and transactional emails, and more. Data is stored in your Bento account so you can easily research and investigate what's going on.
 
 👋 To get personalized support, please tweet @bento or email jesse@bentonow.com!
 
@@ -29,6 +29,26 @@ This plugin does not auto-update.
 ## About Caching (Please Read)
 
 For now, Bento's script is personalized and dynamic meaning that it changes on every page load. This is necessary to power our on-page personalization engine and a lot of the magic that's under the hood. Please make sure you exclude your custom Bento.js script if you are using a caching plugin such as WP Rocket or SuperCache.
+
+## Transactional Email Settings
+
+Bento now supports sending your WordPress transactional emails through our reliable email infrastructure. This gives you several benefits:
+
+- Improved deliverability with our dedicated email infrastructure
+- Detailed analytics and tracking for all your transactional emails
+- Unified email sending platform for both marketing and transactional emails
+- Template management and version control for your transactional emails
+
+To enable transactional emails:
+
+1. Go to the Bento settings page in your WordPress admin
+2. Navigate to the "Transactional Email Settings" section
+3. Check "Send transactional emails through Bento"
+4. Enter your preferred "From" email address
+5. Click "Save Changes"
+6. Use the "Send Test Email" button to verify your setup
+
+Note: If you have attachments in your emails, they will automatically fall back to the WordPress mail system as Bento currently doesn't support attachments.
 
 ## Integrations
 1. WooCommerce and WooCommerce Subscriptions (event listener - see below)
