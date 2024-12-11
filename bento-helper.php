@@ -3,7 +3,7 @@
  * Plugin Name: Bento Helper
  * Plugin URI: https://github.com/bentonow/bento-wordpress-sdk
  * Description: Email marketing, live chat, and analytics for WooCommerce stores.
- * Version: 2.0.1
+ * Version: 2.0.2
  * Author: Bento
  * Author URI: https://bentonow.com
  * Text Domain: bentonow
