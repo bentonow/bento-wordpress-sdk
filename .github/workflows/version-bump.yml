@@ -1,0 +1,69 @@
+name: Version Bump and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version number (e.g., 2.0.3)'
+        required: true
+        type: string
+
+jobs:
+  bump-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set version
+        run: |
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "PREVIOUS_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+
+      - name: Update version in PHP files
+        run: |
+          # Update version in plugin header
+          sed -i "s/Version: .*/Version: $VERSION/" bento-helper.php
+          
+          # Update version property in Bento_Helper class
+          sed -i "s/public \$version = '.*';/public \$version = '$VERSION';/" bento-helper.php
+
+      - name: Update package.json version
+        run: |
+          jq ".version = \"$VERSION\"" package.json > temp.json && mv temp.json package.json
+
+      - name: Generate Release Notes
+        id: release_notes
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const script = require('./.github/scripts/generate-release-notes.js')
+            const notes = await script({github, context})
+            core.setOutput('notes', notes)
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add bento-helper.php package.json
+          git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push
+
+      - name: Create tag
+        run: |
+          git tag v$VERSION
+          git push origin v$VERSION
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: false
