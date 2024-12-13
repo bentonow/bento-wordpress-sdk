@@ -59,7 +59,7 @@ if ( class_exists( 'SureCart' ) && ! class_exists( 'SureCart_Bento_Events', fals
             $custom_fields = array_merge($custom_fields, $additional_fields);
 
             self::send_event(
-                $user_id,
+                null,
                 '$CheckoutConfirmed',
                 $checkout->email,
                 $details,
