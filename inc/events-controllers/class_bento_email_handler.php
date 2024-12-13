@@ -103,16 +103,38 @@ class Bento_Email_Handler extends Bento_Events_Controller {
             error_log('Bento Email Handler: Queueing email');
         }
 
+        // Get current queue
         $queue = get_option('bento_email_queue', array());
+
+        // Create a unique hash for this email
+        $email_hash = $this->create_email_hash($email_data);
+
+        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
+            error_log('Email Hash: ' . $email_hash);
+        }
+
+        // Check for duplicates in the queue using stored hashes
+        foreach ($queue as $item) {
+            // If we find a match with stored hash, log it and return without adding to queue
+            if ($email_hash === $item['hash']) {
+                if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
+                    error_log('Bento Email Handler: Duplicate email detected and discarded');
+                }
+                return;
+            }
+        }
+
+        // If we get here, this is not a duplicate, so add it to the queue
         $queue[] = array(
             'email_data' => $email_data,
             'timestamp' => time(),
+            'hash' => $email_hash
         );
 
         $updated = update_option('bento_email_queue', $queue);
         if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
             error_log('Bento Email Handler: Queue updated: ' . ($updated ? 'true' : 'false'));
-            error_log('Current Queue: ' . print_r($queue, true));
+            error_log('Current Queue Size: ' . count($queue));
         }
     }
 
@@ -125,6 +147,9 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         }
 
         $queue = get_option('bento_email_queue', array());
+        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
+            error_log('Queue size: ' . count($queue));
+        }
 
         $new_queue = array();
 
@@ -141,7 +166,7 @@ class Bento_Email_Handler extends Bento_Events_Controller {
             if (!$success) {
                 // Only keep items that are less than 24 hours old
                 if ($item['timestamp'] > (time() - 86400)) {
-                    $new_queue[] = $item;
+                    $new_queue[] = $item; // Keep hash in queue for failed items
                 }
             }
         }
@@ -150,6 +175,21 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
             error_log('Bento Email Handler: Queue processing complete. Remaining items: ' . count($new_queue));
         }
+    }
+
+    /**
+     * Create a unique hash for an email based on its normalized content
+     */
+    private function create_email_hash($email_data) {
+        // Convert recipient(s) to a consistent format
+        $to = is_array($email_data['to']) ? implode(',', $email_data['to']) : $email_data['to'];
+
+        // Combine key elements of the email
+        $hash_input = $to . '|' .
+            $email_data['subject'];
+
+        // Create a hash that's unlikely to have collisions
+        return md5($hash_input);
     }
 
     /**
