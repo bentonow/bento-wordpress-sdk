@@ -27,6 +27,29 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                     $details = self::prepare_order_event_details( $order );
                     $total   = $order->get_total();
 
+                    $customer = new WC_Customer( $order->get_customer_id() );
+                    
+                    if ( $customer->get_order_count() > 0 ) {
+                        $fields = array(
+                            'woo_total_orders' => $customer->get_order_count(),
+                            'woo_total_revenue' => $customer->get_total_spent(),
+                            'woo_average_order_value' => $customer->get_total_spent() / max(1, $customer->get_order_count()),
+                        );
+                    }
+
+                    $order_meta = $order->get_meta_data();
+                    
+                    $meta_count = 0;
+                    foreach ( $order_meta as $meta ) {
+                        if ( strpos( $meta->key, '_' ) !== 0 ) {
+                            $fields[ $meta->key ] = $meta->value;
+                            $meta_count++;
+                            if ( $meta_count >= 5 ) {
+                                break;
+                            }
+                        }
+                    }
+
                     # returns an integer
                     $decimals = wc_get_price_decimals();
                     
@@ -46,7 +69,8 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                         $user_id,
                         '$OrderPlaced',
                         $order->get_billing_email(),
-                        $details
+                        $details,   
+                        $fields
                     );
                 }
             );
