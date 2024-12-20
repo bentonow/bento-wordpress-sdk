@@ -20,8 +20,7 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
          */
         public function __construct() {
             # Handles the new block checkout.
-            add_action(
-                'woocommerce_new_order',
+            add_action('woocommerce_order_status_completed',
                 function( $order_id ) {
                     $order   = wc_get_order( $order_id );
                     $user_id = self::maybe_get_user_id_from_order( $order );
@@ -95,22 +94,6 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                     );
                 }
             );
-
-            add_action(
-                'woocommerce_order_status_completed',
-                function( $order_id ) {
-                    $order   = wc_get_order( $order_id );
-                    $user_id = self::maybe_get_user_id_from_order( $order );
-                    $details = self::prepare_order_event_details( $order );
-
-                    self::send_event(
-                        $user_id,
-                        '$OrderShipped',
-                        $order->get_billing_email(),
-                        $details
-                    );
-                }
-            );
         }
 
         /**
@@ -129,6 +112,7 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                 'cart'  => array(
                     'items' => self::get_cart_items( $order ),
                 ),
+                'platform' => 'woocommerce',
             );
 
             return $details;
@@ -146,7 +130,9 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
 
             $items = array();
 
-            foreach ( $order->get_items() as $item ) {
+            $order_items = $order->get_items();
+
+            foreach ( $order_items as $item ) {
                 $product = $item->get_product();
 
                 $items[] = array(

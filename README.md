@@ -66,7 +66,7 @@ Note: If you have attachments in your emails, they will automatically fall back 
 
 #### `$OrderPlaced`
 
-When an order is placed in WooCommerce. A persons lifetime value (LTV) will be increased in Bento for the order total.
+When an order is placed in WooCommerce and marked as completed. A persons lifetime value (LTV) will be increased in Bento for the order total.
 
 #### `$OrderRefunded`
 
@@ -75,11 +75,6 @@ If an order is refunded, whether partial or full, it will deduct the LTV of a pe
 #### `$OrderCancelled`
 
 When an order status is changed to `cancelled`.
-
-#### `$OrderShipped`
-
-When an order status has been changed to `completed`.
-
 
 ### WooCommerce Subscriptions
 
