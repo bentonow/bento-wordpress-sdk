@@ -117,15 +117,6 @@ if ( class_exists( 'WC_Subscriptions' ) && ! class_exists( 'WooCommerce_Subscrip
                     $user_id      = self::maybe_get_user_id_from_order( $subscription );
                     $details      = self::prepare_subscription_event_details( $subscription );
 
-                    $order = $subscription->get_last_order( 'all' );
-
-                    if ( $order->get_total() > 0 ) {
-                        $details['value'] = array(
-                            'currency' => $subscription->get_currency(),
-                            'amount'   => $subscription->get_total(),
-                        );
-                    }
-
                     self::send_event(
                         $user_id,
                         '$SubscriptionRenewed',
@@ -155,11 +146,6 @@ if ( class_exists( 'WC_Subscriptions' ) && ! class_exists( 'WooCommerce_Subscrip
                     ),
                 ),
             );
-			if ( $order ) {
-				$details['unique'] = array(
-					'key' => $order->get_order_key(),
-				);
-			}
 
             return $details;
         }
