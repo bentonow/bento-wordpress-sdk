@@ -26,11 +26,20 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                     $order   = wc_get_order( $order_id );
                     $user_id = self::maybe_get_user_id_from_order( $order );
                     $details = self::prepare_order_event_details( $order );
+                    $total   = $order->get_total();
 
-                    if ( $order->get_total() > 0 ) {
+                    # returns an integer
+                    $decimals = wc_get_price_decimals();
+                    
+                    # if decimals is greater than 0, we need to multiply the total by 10^decimals   
+                    if ( $decimals > 0 ) {
+                        $total = round( $total * pow( 10, $decimals ) );
+                    }
+
+                    if ( $total > 0 ) {
                         $details['value'] = array(
                             'currency' => $order->get_currency(),
-                            'amount'   => $order->get_total(),
+                            'amount'   => $total,
                         );
                     }
 
