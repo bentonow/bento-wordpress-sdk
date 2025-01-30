@@ -59,6 +59,10 @@ class Bento_Helper {
 
 		// Set URL.
 		$this->url = plugin_dir_url( __FILE__ );
+
+        // Initialize logger
+        require_once 'inc/class-bento-logger.php';
+        Bento_Logger::init();
 	}
 
 	/**

@@ -10,9 +10,8 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         // Only hook into email processing if the feature is enabled
         $options = get_option('bento_settings');
         if (!empty($options['bento_enable_transactional']) && $options['bento_enable_transactional'] === '1') {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Bento Email Handler: Initialized and enabled');
-            }
+            Bento_Logger::log('Bento Email Handler: Initialized and enabled');
+
 
             // Hook into WordPress email sending
             add_filter('wp_mail', array($this, 'intercept_wp_mail'), 1, 1);
@@ -22,14 +21,10 @@ class Bento_Email_Handler extends Bento_Events_Controller {
 
             if (!wp_next_scheduled('bento_process_email_queue')) {
                 wp_schedule_event(time(), 'every_ten_seconds', 'bento_process_email_queue');
-                if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                    error_log('Bento Email Handler: Scheduled cron job');
-                }
+                Bento_Logger::log('Bento Email Handler: Scheduled cron job');
             }
         } else {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Bento Email Handler: Not enabled in settings');
-            }
+                Bento_Logger::log('Bento Email Handler: Not enabled in settings');
             // Clean up cron job if feature is disabled
             $this->remove_cron_job();
         }
@@ -70,16 +65,13 @@ class Bento_Email_Handler extends Bento_Events_Controller {
      * Intercept WordPress emails and queue them for Bento
      */
     public function intercept_wp_mail($args) {
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Intercepting email');
-            error_log('Email Details: ' . print_r($args, true));
-        }
+        Bento_Logger::log('Bento Email Handler: Intercepting email');
+        Bento_Logger::log('Email Details: ' . print_r($args, true));
+
 
         // Check if email has attachments
         if (!empty($args['attachments'])) {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Bento Email Handler: Email has attachments, falling back to WordPress mail');
-            }
+            Bento_Logger::log('Bento Email Handler: Email has attachments, falling back to WordPress mail');
             return $args; // Return original args to let WordPress handle emails with attachments
         }
 
@@ -99,9 +91,7 @@ class Bento_Email_Handler extends Bento_Events_Controller {
      * Queue an email for sending via Bento
      */
     private function queue_email($email_data) {
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Queueing email');
-        }
+        Bento_Logger::log('Bento Email Handler: Queueing email');
 
         // Get current queue
         $queue = get_option('bento_email_queue', array());
@@ -109,17 +99,13 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         // Create a unique hash for this email
         $email_hash = $this->create_email_hash($email_data);
 
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Email Hash: ' . $email_hash);
-        }
+        Bento_Logger::log('Email Hash: ' . $email_hash);
 
         // Check for duplicates in the queue using stored hashes
         foreach ($queue as $item) {
             // If we find a match with stored hash, log it and return without adding to queue
             if ($email_hash === $item['hash']) {
-                if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                    error_log('Bento Email Handler: Duplicate email detected and discarded');
-                }
+                Bento_Logger::log('Bento Email Handler: Duplicate email detected and discarded');
                 return;
             }
         }
@@ -132,36 +118,27 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         );
 
         $updated = update_option('bento_email_queue', $queue);
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Queue updated: ' . ($updated ? 'true' : 'false'));
-            error_log('Current Queue Size: ' . count($queue));
-        }
+            Bento_Logger::log('Bento Email Handler: Queue updated: ' . ($updated ? 'true' : 'false'));
+            Bento_Logger::log('Current Queue Size: ' . count($queue));
     }
 
     /**
      * Process queued emails
      */
     public function process_email_queue() {
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Processing queue');
-        }
+        Bento_Logger::log('Bento Email Handler: Processing queue');
 
         $queue = get_option('bento_email_queue', array());
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Queue size: ' . count($queue));
-        }
+        Bento_Logger::log('Queue size: ' . count($queue));
 
         $new_queue = array();
 
         foreach ($queue as $item) {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Processing email: ' . print_r($item['email_data'], true));
-            }
+            Bento_Logger::log('Processing email: ' . print_r($item['email_data'], true));
 
             $success = $this->send_via_bento($item['email_data']);
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Send result: ' . ($success ? 'success' : 'failed'));
-            }
+            Bento_Logger::log('Send result: ' . ($success ? 'success' : 'failed'));
+
 
             if (!$success) {
                 // Only keep items that are less than 24 hours old
@@ -172,9 +149,8 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         }
 
         update_option('bento_email_queue', $new_queue);
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Queue processing complete. Remaining items: ' . count($new_queue));
-        }
+        Bento_Logger::log('Bento Email Handler: Queue processing complete. Remaining items: ' . count($new_queue));
+
     }
 
     /**
@@ -204,15 +180,13 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         $from_email = $options['bento_from_email'] ?? get_option('admin_email');
         $transactional_override = !empty($options['bento_transactional_override']) && $options['bento_transactional_override'] === '1';
 
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Handler: Sending via API');
-            error_log('Using from email: ' . $from_email);
-        }
+
+        Bento_Logger::log('Bento Email Handler: Sending via API');
+        Bento_Logger::log('Using from email: ' . $from_email);
+
 
         if (empty($bento_site_key) || empty($bento_publishable_key) || empty($bento_secret_key)) {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Bento Email Handler: Missing credentials');
-            }
+            Bento_Logger::log('Bento Email Handler: Missing credentials');
             return false;
         }
 
@@ -234,7 +208,7 @@ class Bento_Email_Handler extends Bento_Events_Controller {
             )
         );
 
-        error_log('Request body: ' . print_r($body, true));
+        Bento_Logger::log('Request body: ' . print_r($body, true));
 
         // Get plugin version
         $plugin_version = bento_helper()->version;
@@ -256,24 +230,20 @@ class Bento_Email_Handler extends Bento_Events_Controller {
         );
 
         if (is_wp_error($response)) {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-                error_log('Bento Email Handler Error: ' . $response->get_error_message());
-            }
+            Bento_Logger::log('Bento Email Handler Error: ' . $response->get_error_message());
             return false;
         }
 
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
 
-        if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('API Response Code: ' . $response_code);
-            error_log('API Response Body: ' . $response_body);
-        }
+        Bento_Logger::log('API Response Code: ' . $response_code);
+        Bento_Logger::log('API Response Body: ' . $response_body);
 
         if ($response_code !== 200) {
-            if ( defined('WP_DEBUG') && WP_DEBUG === true ) {
-            error_log('Bento Email Error: ' . $response_code . ' - ' . $response_body);
-            }
+
+            Bento_Logger::log('Bento Email Error: ' . $response_code . ' - ' . $response_body);
+
             return false;
         }
 

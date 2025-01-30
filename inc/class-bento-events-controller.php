@@ -216,10 +216,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function bento_send_events_hook() {
 			if ( self::is_sending_events() ) {
-				WP_DEBUG && error_log( '[Bento] - Bento is already sending events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                Bento_Logger::log( '[Bento] - Bento is already sending events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				return; // Already sending events.
 			}
-			WP_DEBUG && error_log( '[Bento] - Sending Bento events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - Sending Bento events.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 			// set the transient to true so we know we're sending events.
 			set_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY, true, HOUR_IN_SECONDS * 6 );
@@ -228,7 +228,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			$new_events_queue = array();
 			foreach ( $events_queue as $event ) {
 				$event_status = self::send_event( $event['user_id'], $event['type'], $event['email'], $event['details'] );
-				WP_DEBUG && error_log( '[Bento] - Bento event "' . $event['type'] . '" sended. Status: ' . $event_status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                Bento_Logger::log( '[Bento] - Bento event "' . $event['type'] . '" sended. Status: ' . $event_status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				if ( ! $event_status ) {
 					// event was not sent successfully.
 					$new_events_queue[] = $event;
@@ -245,7 +245,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 			// finish sending events.
 			delete_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY );
-			WP_DEBUG && error_log( '[Bento] - Bento events sended.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - Bento events sended.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**

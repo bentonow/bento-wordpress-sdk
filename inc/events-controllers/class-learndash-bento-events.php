@@ -325,12 +325,12 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 		 * Verify last login date and send event.
 		 */
 		public static function bento_learndash_scheduled_events_hook() {
-			WP_DEBUG && error_log( '[Bento] - LearnDash scheduled events started.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - LearnDash scheduled events started.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 
 			// self::user_not_completed_events_handler();
 			// self::user_drip_content_events_handler();
 
-			WP_DEBUG && error_log( '[Bento] - LearnDash scheduled events finished.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - LearnDash scheduled events finished.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**
@@ -399,7 +399,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			// update the drip content meta.
 			update_option( self::BENTO_DRIP_CONTENT_META_KEY, $current_drip_content );
 
-			WP_DEBUG && error_log( '[Bento] - User drip content events checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - User drip content events checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**
@@ -415,7 +415,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			$users_should_send_events = array();
 
 			if ( empty( $bento_user_not_completed_events_interval ) ) {
-				WP_DEBUG && error_log( '[Bento] - User not completed content events disabled.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                Bento_Logger::log( '[Bento] - User not completed content events disabled.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 
 			// get all ld courses.
@@ -631,7 +631,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 				}
 			}
 
-			WP_DEBUG && error_log( '[Bento] - User not completed content events checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - User not completed content events checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**

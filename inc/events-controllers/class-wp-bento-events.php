@@ -44,10 +44,10 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 			$bento_repeat_not_events        = self::get_bento_option( 'bento_events_repeat_not_event' );
 
 			if ( empty( $bento_user_not_logged_interval ) ) {
-				WP_DEBUG && error_log( '[Bento] - User not logged events disabled.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                Bento_Logger::log( '[Bento] - User not logged events disabled.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 
-			WP_DEBUG && error_log( '[Bento] - Checking user logins.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - Checking user logins.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			$users = get_users(
 				array(
 					'meta_key'     => self::BENTO_LAST_LOGIN_META_KEY,  // phpcs:ignore WordPress.DB.SlowDBQuery
@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 				}
 			}
 
-			WP_DEBUG && error_log( '[Bento] - User logins checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            Bento_Logger::log( '[Bento] - User logins checked.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}
 
 		/**
