@@ -50,22 +50,58 @@ class BentoSettingsPage {
 	/**
 	 * Options page callback
 	 */
-	public function create_admin_page() {
-		?>
-		<div class="wrap">
-			<img src="https://bentonow.com/characters/no-messages.png" alt="Bento Character" style="float: right; margin-left: 20px; max-width: 200px;">
-			<h1><?php esc_html_e( 'Bento Settings', 'bentonow' ); ?></h1>
-			<form method="post" action="options.php">
-				<?php
-				// This prints out all hidden setting fields.
-				settings_fields( 'bento_option_group' );
-				do_settings_sections( 'bento-setting-admin' );
-				submit_button();
-				?>
-			</form>
-		</div>
-		<?php
-	}
+    public function create_admin_page() {
+        $connection_status = get_option('bento_connection_status', ['connected' => false]);
+        ?>
+      <div class="wrap">
+        <h1 class="wp-heading-inline">
+            <?php esc_html_e('Bento Settings', 'bentonow'); ?>
+            <?php if (isset($connection_status['connected'])): ?>
+              <span class="bento-connection-badge <?php echo $connection_status['connected'] ? 'connected' : 'error'; ?>">
+           <?php
+           echo esc_html($connection_status['message']);
+           if (!$connection_status['connected']) {
+               echo ' (Code: ' . esc_html($connection_status['code']) . ')';
+           }
+           ?>
+       </span>
+            <?php endif; ?>
+        </h1>
+
+        <img src="https://bentonow.com/characters/no-messages.png" alt="Bento Character" style="float: right; margin-left: 20px; max-width: 200px;">
+
+        <form method="post" action="options.php">
+            <?php
+            settings_fields('bento_option_group');
+            do_settings_sections('bento-setting-admin');
+            submit_button();
+            ?>
+        </form>
+      </div>
+
+      <style>
+          .bento-connection-badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 13px;
+              font-weight: 500;
+              margin-left: 10px;
+              vertical-align: middle;
+              cursor: help;
+          }
+          .bento-connection-badge.connected {
+              background: #00A32A;
+              color: white;
+              cursor: default;
+          }
+          .bento-connection-badge.error {
+              background: #d63638;
+              color: white;
+          }
+      </style>
+        <?php
+    }
 
     public function enqueue_admin_scripts($hook) {
         // Only load on our settings page
@@ -374,8 +410,82 @@ class BentoSettingsPage {
             $new_input['bento_from_email'] = sanitize_email( $input['bento_from_email'] );
         }
 
+      // Validate credentials if all required fields are present
+      if (!empty($new_input['bento_site_key']) &&
+          !empty($new_input['bento_publishable_key']) &&
+          !empty($new_input['bento_secret_key'])) {
+
+          $validation = $this->validate_bento_credentials($new_input);
+          update_option('bento_connection_status', $validation);
+      }
+
+      return $new_input;
+
 		return $new_input;
 	}
+
+    /**
+     * Validate Bento API credentials
+     *
+     * @param array $credentials Array containing site_key, publishable_key, and secret_key
+     * @return array Status array with 'connected' boolean and 'message' string
+     */
+    private function validate_bento_credentials($credentials) {
+        if (empty($credentials['bento_site_key']) ||
+            empty($credentials['bento_publishable_key']) ||
+            empty($credentials['bento_secret_key'])) {
+            return [
+                'connected' => false,
+                'message' => 'Missing required credentials'
+            ];
+        }
+
+        $auth = base64_encode($credentials['bento_publishable_key'] . ':' . $credentials['bento_secret_key']);
+
+        $response = wp_remote_get(
+
+            'https://app.bentonow.com/api/v1/fetch/authors?site_uuid=' . urlencode($credentials['bento_site_key']),
+            array(
+                'headers' => array(
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Basic ' . $auth,
+                    'User-Agent' => 'bento-wordpress-'.$credentials['bento_site_key']
+                ),
+                'timeout' => 15
+            )
+        );
+
+        if (is_wp_error($response)) {
+            return [
+                'connected' => false,
+                'message' => 'Failed to connect to Bento'
+            ];
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+
+        if ($response_code === 200) {
+            return [
+                'connected' => true,
+                'message' => 'Connected to Bento successfully',
+                'code' => $response_code
+            ];
+        }
+
+        if ($response_code === 401 || $response_code === 403) {
+            return [
+                'connected' => false,
+                'message' => 'Invalid credentials',
+                'code' => $response_code
+            ];
+        }
+
+        return [
+            'connected' => false,
+            'message' => 'Failed to connect',
+            'code' => $response_code
+        ];
+    }
 
 	/**
 	 * Get the settings option and print the corresponding element
