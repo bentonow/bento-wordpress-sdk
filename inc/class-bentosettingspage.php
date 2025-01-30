@@ -250,6 +250,21 @@ class BentoSettingsPage {
 
 		}
 
+      add_settings_field(
+          'bento_enable_logging',
+          esc_html__('Debug Logging', 'bentonow'),
+          array($this, 'bento_setting_field_callback'),
+          'bento-setting-admin',
+          'bento_setting_section_id',
+          array(
+              'id'    => 'bento_enable_logging',
+              'value' => $this->options['bento_enable_logging'] ?? '0',
+              'type'  => 'checkbox',
+              'label' => esc_html__('Enable plugin logging', 'bentonow'),
+          )
+      );
+
+
         // Transactional email settings
 
         add_settings_section(
@@ -343,6 +358,9 @@ class BentoSettingsPage {
 			$new_input['bento_events_repeat_not_event'] = absint( sanitize_text_field( $input['bento_events_repeat_not_event'] ) );
 		}
 
+      if ( isset( $input['bento_enable_logging'] ) ) {
+          $new_input['bento_enable_logging'] = isset($input['bento_enable_logging']) ? '1' : '0';
+      }
 		// Add this new sanitization for the tracking option
 		$new_input['bento_enable_tracking'] = isset( $input['bento_enable_tracking'] ) ? '1' : '0';
 
