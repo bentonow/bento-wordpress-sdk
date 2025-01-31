@@ -47,6 +47,24 @@ class BentoSettingsPage {
 		);
 	}
 
+    public function toggle_logging() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.'));
+        }
+
+        check_admin_referer('toggle_bento_mail_logging');
+
+        $options = get_option('bento_settings', array());
+        $options['bento_enable_mail_logging'] = !empty($_POST['enable_logging']) ? '1' : '0';
+        update_option('bento_settings', $options);
+
+        wp_safe_redirect(add_query_arg(
+            ['page' => 'bento-mail-logs', 'toggled' => '1'],
+            admin_url('admin.php')
+        ));
+        exit;
+    }
+
 	/**
 	 * Options page callback
 	 */
@@ -356,6 +374,20 @@ class BentoSettingsPage {
             'bento_email_section_id'
         );
 
+      add_settings_field(
+          'bento_enable_mail_logging',
+          __('Mail Logging', 'bentonow'),
+          array($this, 'bento_setting_field_callback'),
+          'bento-setting-admin',
+          'bento_setting_section_id',
+          array(
+              'id' => 'bento_enable_mail_logging',
+              'value' => isset($this->options['bento_enable_mail_logging']) ? $this->options['bento_enable_mail_logging'] : '0',
+              'type' => 'checkbox',
+              'label' => __('Enable mail logging', 'bentonow')
+          )
+      );
+
         // Add AJAX handler for fetching authors
         add_action('wp_ajax_bento_fetch_authors', array($this, 'fetch_authors_ajax'));
 
@@ -399,6 +431,10 @@ class BentoSettingsPage {
       }
 		// Add this new sanitization for the tracking option
 		$new_input['bento_enable_tracking'] = isset( $input['bento_enable_tracking'] ) ? '1' : '0';
+
+      if (isset($input['bento_enable_mail_logging'])) {
+          $new_input['bento_enable_mail_logging'] = '1';
+      }
 
         $new_input['bento_transactional_override'] = isset( $input['bento_transactional_override'] ) ? '1' : '0';
 
@@ -778,3 +814,5 @@ class BentoSettingsPage {
 if ( is_admin() ) {
 	$bento_settings_page = new BentoSettingsPage();
 }
+
+
