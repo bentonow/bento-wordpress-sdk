@@ -5,12 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="29894042-fd0b-4fea-ab25-7369620b4975" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/inc/admin/class-bento-mail-admin.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inc/admin/views/mail-logs.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inc/class-bento-mail-handler.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inc/class-bento-mail-logger.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inc/interfaces/mail-interfaces.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inc/wordpress/class-wordpress-adapters.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/Pest.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/TestCase.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/Unit/MailHandlerTest.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/Unit/MailLoggerTest.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/bootstrap.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bento-helper.php" beforeDir="false" afterPath="$PROJECT_DIR$/bento-helper.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inc/class-bentosettingspage.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc/class-bentosettingspage.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inc/class-bento-mail-handler.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc/class-bento-mail-handler.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inc/class-bento-mail-logger.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc/class-bento-mail-logger.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +48,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "JavaScript Debug.MailHandlerTest.php.executor": "Run",
+    "Pest.MailHandlerTest.php::rejects and logs emails with attachments.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "bento__emailer",
@@ -55,6 +63,45 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager" selected="Pest.MailHandlerTest.php::rejects and logs emails with attachments">
+    <configuration name="MailHandlerTest.php" type="JavascriptDebugType" temporary="true" nameIsGenerated="true" uri="http://localhost:63342/bento-wordpress-sdk/tests/Unit/MailHandlerTest.php" useBuiltInWebServerPort="true">
+      <method v="2" />
+    </configuration>
+    <configuration name="MailHandlerTest.php::rejects and logs emails with attachments" type="PestRunConfigurationType" temporary="true">
+      <option name="pestRunnerSettings">
+        <PestRunner file="$PROJECT_DIR$/tests/Unit/MailHandlerTest.php" method="rejects and logs emails with attachments" scope="Method" />
+      </option>
+      <option name="runnerSettings">
+        <PhpTestRunnerSettings file="$PROJECT_DIR$/tests/Unit/MailHandlerTest.php" method="rejects and logs emails with attachments" scope="Method" />
+      </option>
+      <method v="2" />
+    </configuration>
+    <configuration name="Unnamed" type="PestRunConfigurationType" nameIsGenerated="true">
+      <CommandLine>
+        <PhpTestInterpreterSettings>
+          <option name="interpreterName" value="PHP Herd" />
+        </PhpTestInterpreterSettings>
+      </CommandLine>
+      <option name="pestRunnerSettings">
+        <PestRunner method="" scope="Method" />
+      </option>
+      <option name="runnerSettings">
+        <PhpTestRunnerSettings method="" scope="Method" />
+      </option>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="JavaScript Debug.MailHandlerTest.php" />
+      <item itemvalue="Pest.Unnamed" />
+      <item itemvalue="Pest.MailHandlerTest.php::rejects and logs emails with attachments" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Pest.MailHandlerTest.php::rejects and logs emails with attachments" />
+        <item itemvalue="JavaScript Debug.MailHandlerTest.php" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -73,7 +120,7 @@
       <updated>1738209187672</updated>
       <workItem from="1738209188712" duration="17869000" />
       <workItem from="1738288687986" duration="722000" />
-      <workItem from="1738298570764" duration="6122000" />
+      <workItem from="1738298570764" duration="17696000" />
     </task>
     <servers />
   </component>

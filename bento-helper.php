@@ -72,6 +72,14 @@ class Bento_Helper {
 		// Activate notice (shown once).
 		add_action( 'admin_notices', array( $this, 'activate_notice' ) );
 
+        // Core interface and adapters
+        require_once 'inc/interfaces/mail-interfaces.php';
+        require_once 'inc/wordpress/class-wordpress-adapters.php';
+
+        // Mail handling components
+        require_once 'inc/class-bento-mail-logger.php';
+        require_once 'inc/class-bento-mail-handler.php';
+
 		if ( class_exists( 'WooCommerce' ) ) {
 			require_once 'inc/ajax.php';
 		}
@@ -88,7 +96,7 @@ class Bento_Helper {
 		Bento_Events_Controller::init();
 
 		// Here we load up all the different form handlers.
-		Bento_Bricks_Form_Handler::init(); # 
+		Bento_Bricks_Form_Handler::init(); #
 		Bento_Elementor_Form_Handler::init();
 
         // Initialize mail handler
@@ -101,7 +109,7 @@ class Bento_Helper {
             $mail_admin = new Bento_Mail_Admin();
             $mail_admin->init();
         }
-	
+
 		if ( class_exists( 'WPForms' ) ) {
 			require_once 'inc/forms/class-wp-forms-form-handler.php';
 		}
@@ -150,7 +158,7 @@ class Bento_Helper {
 
 		if ( get_option( 'bento_show_activation_notice', false ) || ! $site_key) {
 			echo '<div class="notice notice-success">
-			<p>' . sprintf( __( 'Welcome to Bento! To get started, please <a href="%s">configure your settings</a> and connect your Bento account.', 'bentonow' ), 
+			<p>' . sprintf( __( 'Welcome to Bento! To get started, please <a href="%s">configure your settings</a> and connect your Bento account.', 'bentonow' ),
 			esc_url( admin_url( 'admin.php?page=bento-setting-admin' ) ) ) . '</p>
 		  </div>';
 			// Disable notice option.

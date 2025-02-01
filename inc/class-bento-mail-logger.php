@@ -1,25 +1,28 @@
 <?php
 defined('ABSPATH') || exit;
 
-class Bento_Mail_Logger {
+class Bento_Mail_Logger implements Mail_Logger_Interface {
     private $log_file;
     private $max_size = 10485760; // 10MB
     private $hash_expiry = 300; // 5 minutes in seconds
 
-    public function __construct() {
-        $upload_dir = wp_upload_dir();
-        $this->log_file = $upload_dir['basedir'] . '/bento/mail-logs.json';
+    public function __construct(?string $log_file = null) {
+        if ($log_file) {
+            $this->log_file = $log_file;
+        } else {
+            $upload_dir = wp_upload_dir();
+            $this->log_file = $upload_dir['basedir'] . '/bento/mail-logs.json';
+        }
         wp_mkdir_p(dirname($this->log_file));
     }
 
-    public function log_mail($data) {
+    public function log_mail(array $data): void {
         if (!$this->is_logging_enabled()) {
             return;
         }
 
         $data['timestamp'] = time();
 
-        // Ensure we have an ID for tracking
         if (empty($data['id'])) {
             $data['id'] = uniqid('mail_', true);
         }
@@ -28,7 +31,7 @@ class Bento_Mail_Logger {
         $this->check_size();
     }
 
-    public function is_duplicate($hash) {
+    public function is_duplicate(string $hash): bool {
         $logs = $this->read_logs();
         $cutoff = time() - $this->hash_expiry;
 
@@ -43,43 +46,12 @@ class Bento_Mail_Logger {
         return false;
     }
 
-    private function write_log($data) {
-        $logs = $this->read_logs();
-        array_unshift($logs, $data);
-
-        $this->ensure_directory_exists();
-        if (file_put_contents($this->log_file, wp_json_encode($logs)) === false) {
-            Bento_Logger::error('[Mail Logger] Failed to write to log file: ' . $this->log_file);
-        }
-    }
-
-    private function ensure_directory_exists() {
-        $dir = dirname($this->log_file);
-        if (!file_exists($dir)) {
-            if (!wp_mkdir_p($dir)) {
-                Bento_Logger::error('[Mail Logger] Failed to create directory: ' . $dir);
-            }
-        }
-    }
-
-    private function check_size() {
-        if (!file_exists($this->log_file)) {
-            return;
-        }
-
-        if (filesize($this->log_file) > $this->max_size) {
-            $logs = $this->read_logs();
-            $logs = array_slice($logs, 0, 1000);
-            file_put_contents($this->log_file, wp_json_encode($logs));
-        }
-    }
-
-    public function clear_logs() {
+    public function clear_logs(): void {
         $this->ensure_directory_exists();
         file_put_contents($this->log_file, wp_json_encode([]));
     }
 
-    public function read_logs($limit = null) {
+    public function read_logs(?int $limit = null): array {
         if (!file_exists($this->log_file)) {
             return [];
         }
@@ -101,8 +73,43 @@ class Bento_Mail_Logger {
         return $logs;
     }
 
-    private function is_logging_enabled() {
+    private function write_log(array $data): void {
+        $logs = $this->read_logs();
+        array_unshift($logs, $data);
+
+        $this->ensure_directory_exists();
+        if (file_put_contents($this->log_file, wp_json_encode($logs)) === false) {
+            Bento_Logger::error('Failed to write to log file: ' . $this->log_file);
+        }
+    }
+
+    private function ensure_directory_exists(): void {
+        $dir = dirname($this->log_file);
+        if (!file_exists($dir)) {
+            if (!wp_mkdir_p($dir)) {
+                Bento_Logger::error('Failed to create directory: ' . $dir);
+            }
+        }
+    }
+
+    private function check_size(): void {
+        if (!file_exists($this->log_file)) {
+            return;
+        }
+
+        if (filesize($this->log_file) > $this->max_size) {
+            $logs = $this->read_logs();
+            $logs = array_slice($logs, 0, 1000);
+            file_put_contents($this->log_file, wp_json_encode($logs));
+        }
+    }
+
+    private function is_logging_enabled(): bool {
         $options = get_option('bento_settings');
         return !empty($options['bento_enable_mail_logging']);
+    }
+
+    public function get_log_file_path(): string {
+        return $this->log_file;
     }
 }

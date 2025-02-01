@@ -1,49 +1,66 @@
 <?php
+
 defined('ABSPATH') || exit;
 
-class Bento_Mail_Handler {
+class Bento_Mail_Handler implements Mail_Handler_Interface {
     private static $instance = null;
-    private $options;
+    private $config;
+    private $logger;
+    private $http_client;
     private $mail_logger;
 
-    public static function instance() {
+    public function __construct(
+        ?Configuration_Interface $config = null,
+        ?Logger_Interface $logger = null,
+        ?Http_Client_Interface $http_client = null,
+        ?Mail_Logger_Interface $mail_logger = null
+    ) {
+        $this->config = $config ?? new WordPress_Configuration();
+        $this->logger = $logger ?? new WordPress_Logger();
+        $this->http_client = $http_client ?? new WordPress_Http_Client();
+        $this->mail_logger = $mail_logger ?? new Bento_Mail_Logger();
+    }
+
+    public static function instance(): self {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    public function init() {
-        $this->options = get_option('bento_settings');
-        Bento_Logger::log('[Mail Handler] Initializing with options: ' . print_r($this->options, true));
-
-        if (empty($this->options['bento_enable_transactional']) || $this->options['bento_enable_transactional'] !== '1') {
-            Bento_Logger::log('[Mail Handler] Transactional emails not enabled, skipping initialization');
+    public function init(): void {
+        if (!$this->is_enabled()) {
+            $this->logger->log('Transactional emails not enabled, skipping initialization');
             return;
         }
 
-        require_once dirname(__FILE__) . '/class-bento-mail-logger.php';
-        $this->mail_logger = new Bento_Mail_Logger();
         add_filter('pre_wp_mail', [$this, 'handle_wp_mail'], 10, 2);
-        Bento_Logger::log('[Mail Handler] Added pre_wp_mail filter');
+        $this->logger->log('Added pre_wp_mail filter');
     }
 
-    public function handle_wp_mail($null, $atts) {
-        Bento_Logger::log('[Mail Handler] Handle mail called');
+    public function handle_wp_mail($null, array $atts): ?bool {
+        $this->logger->log('Handle mail called');
+
         $to = is_array($atts['to']) ? $atts['to'] : explode(',', $atts['to']);
         $to = array_map('trim', $to);
-        $subject = $atts['subject'] ?? '';
-        $message = $atts['message'] ?? '';
-        $headers = $atts['headers'] ?? '';
-        $attachments = $atts['attachments'] ?? array();
+        $headers = is_array($atts['headers']) ? $atts['headers'] : explode("\n", str_replace("\r\n", "\n", $atts['headers']));
 
-        // Generate unique ID for this email
+        return $this->handle_mail(
+            $to[0],
+            $atts['subject'] ?? '',
+            $atts['message'] ?? '',
+            $headers,
+            $atts['attachments'] ?? []
+        );
+    }
+
+    public function handle_mail(string $to, string $subject, string $message, array $headers = [], array $attachments = []): bool {
         $mail_id = uniqid('mail_', true);
 
         $this->mail_logger->log_mail([
             'id' => $mail_id,
             'type' => 'mail_received',
-            'to' => implode(',', $to),
+            'to' => $to,
             'subject' => $subject,
             'success' => true
         ]);
@@ -53,69 +70,47 @@ class Bento_Mail_Handler {
                 'id' => $mail_id,
                 'type' => 'wordpress_fallback',
                 'reason' => 'attachments',
-                'to' => implode(',', $to),
+                'to' => $to,
                 'subject' => $subject
             ]);
-            return null;
+            return false;
         }
 
-        // Check for duplicates
-        $hash = md5($to[0] . $subject . $message);
+        $hash = md5($to . $subject . $message);
         if ($this->mail_logger->is_duplicate($hash)) {
             $this->mail_logger->log_mail([
                 'id' => $mail_id,
                 'type' => 'blocked_duplicate',
-                'to' => implode(',', $to),
+                'to' => $to,
                 'subject' => $subject,
                 'hash' => $hash
             ]);
             return true;
         }
 
-        $headers = $this->parse_headers($headers);
         $result = $this->send_via_bento([
             'id' => $mail_id,
-            'to' => $to[0],
+            'to' => $to,
             'subject' => $subject,
             'message' => $message,
-            'headers' => $headers,
+            'headers' => $this->parse_headers($headers),
             'hash' => $hash
         ]);
 
-        if (!$result) {
-            $this->mail_logger->log_mail([
-                'id' => $mail_id,
-                'type' => 'bento_failed',
-                'to' => implode(',', $to),
-                'subject' => $subject,
-                'hash' => $hash,
-                'success' => false
-            ]);
-            return null;
-        }
-
         $this->mail_logger->log_mail([
             'id' => $mail_id,
-            'type' => 'bento_sent',
-            'to' => implode(',', $to),
+            'type' => $result ? 'bento_sent' : 'bento_failed',
+            'to' => $to,
             'subject' => $subject,
             'hash' => $hash,
-            'success' => true
+            'success' => $result
         ]);
 
-        return true;
+        return $result;
     }
 
-    private function parse_headers($headers) {
-        if (empty($headers)) {
-            return array();
-        }
-
-        if (!is_array($headers)) {
-            $headers = explode("\n", str_replace("\r\n", "\n", $headers));
-        }
-
-        $parsed = array();
+    private function parse_headers(array $headers): array {
+        $parsed = [];
         foreach ($headers as $header) {
             if (strpos($header, ':') === false) {
                 continue;
@@ -123,63 +118,51 @@ class Bento_Mail_Handler {
             list($name, $value) = explode(':', $header, 2);
             $parsed[trim($name)] = trim($value);
         }
-
         return $parsed;
     }
 
-    private function send_via_bento($data) {
-        $bento_site_key = $this->options['bento_site_key'] ?? '';
-        $bento_publishable_key = $this->options['bento_publishable_key'] ?? '';
-        $bento_secret_key = $this->options['bento_secret_key'] ?? '';
-        $from_email = $this->options['bento_from_email'] ?? get_option('admin_email');
+    private function send_via_bento(array $data): bool {
+        $site_key = $this->config->get_option('bento_site_key');
+        $publishable_key = $this->config->get_option('bento_publishable_key');
+        $secret_key = $this->config->get_option('bento_secret_key');
+        $from_email = $this->config->get_option('bento_from_email', $this->config->get_option('admin_email'));
 
-        if (empty($bento_site_key) || empty($bento_publishable_key) || empty($bento_secret_key)) {
-            Bento_Logger::log('[Mail Handler] Missing API credentials');
+        if (empty($site_key) || empty($publishable_key) || empty($secret_key)) {
+            $this->logger->error('Missing API credentials');
             return false;
         }
 
-        $auth = base64_encode($bento_publishable_key . ':' . $bento_secret_key);
-        $api_url = 'https://app.bentonow.com/api/v1/batch/emails?site_uuid=' . $bento_site_key;
+        $auth = base64_encode($publishable_key . ':' . $secret_key);
+        $url = "https://app.bentonow.com/api/v1/batch/emails?site_uuid={$site_key}";
 
-        $body = array(
-            'emails' => array(
-                array(
+        $body = [
+            'emails' => [
+                [
                     'to' => $data['to'],
                     'from' => $from_email,
                     'subject' => $data['subject'],
                     'html_body' => $data['message'],
                     'transactional' => true
-                )
-            )
-        );
+                ]
+            ]
+        ];
 
-        Bento_Logger::log('[Mail Handler] Sending request to Bento API');
+        try {
+            $response = $this->http_client->post($url, $body, [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => 'Basic ' . $auth,
+                'User-Agent' => 'bento-wordpress-' . $site_key
+            ]);
 
-        $response = wp_remote_post(
-            $api_url,
-            array(
-                'headers' => array(
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                    'Authorization' => 'Basic ' . $auth,
-                    'User-Agent' => 'bento-wordpress-' . $bento_site_key
-                ),
-                'body' => wp_json_encode($body),
-                'timeout' => 30,
-            )
-        );
-
-        if (is_wp_error($response)) {
-            Bento_Logger::log('[Mail Handler] API Error: ' . $response->get_error_message());
+            return $response['status_code'] === 200;
+        } catch (\Exception $e) {
+            $this->logger->error('API Error: ' . $e->getMessage());
             return false;
         }
+    }
 
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-
-        Bento_Logger::log('[Mail Handler] API Response Code: ' . $response_code);
-        Bento_Logger::log('[Mail Handler] API Response Body: ' . $response_body);
-
-        return $response_code === 200;
+    private function is_enabled(): bool {
+        return $this->config->get_option('bento_enable_transactional') === '1';
     }
 }
