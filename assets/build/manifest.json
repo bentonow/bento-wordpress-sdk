@@ -1,0 +1,17 @@
+{
+  "assets/js/src/bento-wordpress-sdk.js": {
+    "file": "bento-wordpress-sdk-BLAJjbCZ.js",
+    "name": "bento-wordpress-sdk",
+    "src": "assets/js/src/bento-wordpress-sdk.js",
+    "isEntry": true
+  },
+  "assets/js/src/mail-logs.jsx": {
+    "file": "mail-logs-BTYuIWeg.js",
+    "name": "mail-logs",
+    "src": "assets/js/src/mail-logs.jsx",
+    "isEntry": true,
+    "css": [
+      "mail-logs-BPJ2gkmP.css"
+    ]
+  }
+}
