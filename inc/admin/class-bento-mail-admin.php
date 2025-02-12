@@ -15,54 +15,54 @@ class Bento_Mail_Admin {
     }
 
     public function enqueue_scripts($hook) {
-        Bento_logger::log('Bento: Script enqueue function called with hook: ' . $hook);
-
-        if ('bento_page_bento-mail-logs' !== $hook) {
-            Bento_logger::log('Bento: Hook did not match, skipping script load');
+        if (!current_user_can('manage_options')) {
             return;
         }
 
         $manifest_path = plugin_dir_path(dirname(dirname(__FILE__))) . 'assets/build/manifest.json';
-        Bento_logger::log('Bento: Looking for manifest at: ' . $manifest_path);
-
         if (!file_exists($manifest_path)) {
-            Bento_logger::log('Bento: Manifest file not found at ' . $manifest_path);
             return;
         }
 
         $manifest = json_decode(file_get_contents($manifest_path), true);
-        Bento_logger::log('Bento: Manifest contents: ' . print_r($manifest, true));
-
-        $entry_key = 'assets/js/src/mail-logs.jsx';  // Match the exact key from manifest
-
-        if (!isset($manifest[$entry_key])) {
-            Bento_logger::log('Bento: Mail logs entry not found in manifest for key: ' . $entry_key);
+        if (!isset($manifest['assets/js/src/app.jsx'])) {
             return;
         }
 
-        // Get the JS file
-        $js_file = $manifest[$entry_key]['file'];
-        $js_path = plugin_dir_url(dirname(dirname(__FILE__))) . 'assets/build/' . $js_file;
-
-        // Get the CSS file
-        if (isset($manifest[$entry_key]['css']) && is_array($manifest[$entry_key]['css'])) {
-            foreach ($manifest[$entry_key]['css'] as $css_file) {
-                wp_enqueue_style(
-                    'bento-mail-logs-' . basename($css_file, '.css'),
-                    plugin_dir_url(dirname(dirname(__FILE__))) . 'assets/build/' . $css_file,
-                    [],
-                    null
-                );
-            }
-        }
+        // Get the app bundle
+        $app_file = $manifest['assets/js/src/app.jsx']['file'];
+        $css_files = $manifest['assets/js/src/app.jsx']['css'] ?? [];
 
         // Enqueue React
         wp_enqueue_script('wp-element');
 
-        // Enqueue our script
-        wp_enqueue_script('bento-mail-logs', $js_path, ['wp-element'], null, true);
+        // Enqueue our bundle
+        wp_enqueue_script(
+            'bento-admin-app',
+            plugin_dir_url(dirname(dirname(__FILE__))) . 'assets/build/' . $app_file,
+            ['wp-element'],
+            null,
+            true
+        );
 
-        Bento_logger::log('Bento: Scripts and styles enqueued successfully');
+        // Enqueue CSS
+        foreach ($css_files as $css_file) {
+            wp_enqueue_style(
+                'bento-admin-' . basename($css_file, '.css'),
+                plugin_dir_url(dirname(dirname(__FILE__))) . 'assets/build/' . $css_file,
+                [],
+                null
+            );
+        }
+
+        // Localize script data
+        $admin_data = [
+            'mailLogs' => $this->logger->read_logs(1000),
+            'nonce' => wp_create_nonce('clear_bento_mail_logs'),
+            'adminUrl' => admin_url('admin-post.php')
+        ];
+
+        wp_localize_script('bento-admin-app', 'bentoAdmin', $admin_data);
     }
 
     public function add_menu_page() {
@@ -80,19 +80,7 @@ class Bento_Mail_Admin {
         if (!current_user_can('manage_options')) {
             return;
         }
-
-        $options = get_option('bento_settings');
-        $logs = $this->logger->read_logs(1000);
-
-        // Format timestamps
-        foreach ($logs as &$log) {
-            $log['timestamp'] = date_i18n(
-                get_option('date_format') . ' ' . get_option('time_format'),
-                $log['timestamp']
-            );
-        }
-
-        include dirname(__FILE__) . '/views/mail-logs.php';
+        echo '<div id="bento-mail-logs"></div>';
     }
 
     public function clear_logs() {

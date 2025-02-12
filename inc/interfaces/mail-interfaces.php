@@ -7,6 +7,8 @@ interface Mail_Handler_Interface {
 
 interface Configuration_Interface {
     public function get_option(string $key, $default = null);
+    public function update_option(string $key, $value): bool;
+    public function validate_credentials(array $credentials): array;
 }
 
 interface Logger_Interface {

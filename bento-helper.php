@@ -69,12 +69,15 @@ class Bento_Helper {
 	 * Start plugin.
 	 */
 	public function init() {
-		// Activate notice (shown once).
-		add_action( 'admin_notices', array( $this, 'activate_notice' ) );
 
         // Core interface and adapters
         require_once 'inc/interfaces/mail-interfaces.php';
         require_once 'inc/wordpress/class-wordpress-adapters.php';
+
+        // Settings and Controllers
+        require_once 'inc/class-bento-settings-controller.php';
+        require_once 'inc/class-bentosettingspage.php';
+        require_once 'inc/class-bento-events-controller.php';
 
         // Mail handling components
         require_once 'inc/class-bento-mail-logger.php';
@@ -145,24 +148,6 @@ class Bento_Helper {
 		}
 		if ( class_exists( 'LearnDash_Bento_Events' ) ) {
 			LearnDash_Bento_Events::remove_cron_jobs();
-		}
-	}
-
-	/**
-	 * Activation notice for onboarding at first activation or if site key is not set.
-	 */
-	public function activate_notice() {
-
-		$settings = get_option( 'bento_settings' );
-		$site_key = !empty( $settings['bento_site_key'] ) ? $settings['bento_site_key'] : false;
-
-		if ( get_option( 'bento_show_activation_notice', false ) || ! $site_key) {
-			echo '<div class="notice notice-success">
-			<p>' . sprintf( __( 'Welcome to Bento! To get started, please <a href="%s">configure your settings</a> and connect your Bento account.', 'bentonow' ),
-			esc_url( admin_url( 'admin.php?page=bento-setting-admin' ) ) ) . '</p>
-		  </div>';
-			// Disable notice option.
-			update_option( 'bento_show_activation_notice', false );
 		}
 	}
 

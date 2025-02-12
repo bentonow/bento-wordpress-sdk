@@ -1,11 +1,28 @@
 import React from 'react';
-import { Button } from '../components/ui/button.jsx';
-import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell } from '../components/ui/table.jsx';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '../components/ui/alert-dialog.jsx';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell
+} from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel
+} from '@/components/ui/alert-dialog';
 import { CheckCircle2, AlertCircle, AlertTriangle, RotateCcw } from 'lucide-react';
 
-const MailLogs = ({ logs, nonce, adminUrl }) => {
+export default function MailLogs({ logs, nonce, adminUrl }) {
   const { toast } = useToast();
 
   const handleClearLogs = async () => {
@@ -27,7 +44,6 @@ const MailLogs = ({ logs, nonce, adminUrl }) => {
           description: "Mail logs have been cleared successfully.",
           duration: 3000,
         });
-        // Reload the page to show cleared logs
         window.location.reload();
       } else {
         throw new Error('Failed to clear logs');
@@ -81,7 +97,7 @@ const MailLogs = ({ logs, nonce, adminUrl }) => {
 
       <div>
         <Table>
-          <TableHeader className={'border-b'}>
+          <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Time</TableHead>
@@ -91,7 +107,7 @@ const MailLogs = ({ logs, nonce, adminUrl }) => {
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className={'bg-white'}>
+          <TableBody>
             {logs.map((log) => (
               <TableRow key={log.id}>
                 <TableCell>{log.id}</TableCell>
@@ -102,9 +118,11 @@ const MailLogs = ({ logs, nonce, adminUrl }) => {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(log.type, log.success)}
-                    <span>{log.type === 'blocked_duplicate' ? 'Blocked' :
-                      log.type === 'wordpress_fallback' ? 'WordPress' :
-                        log.success ? 'Sent' : 'Failed'}</span>
+                    <span>
+                                            {log.type === 'blocked_duplicate' ? 'Blocked' :
+                                              log.type === 'wordpress_fallback' ? 'WordPress' :
+                                                log.success ? 'Sent' : 'Failed'}
+                                        </span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -114,6 +132,4 @@ const MailLogs = ({ logs, nonce, adminUrl }) => {
       </div>
     </div>
   );
-};
-
-export default MailLogs;
+}
