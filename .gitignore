@@ -13,3 +13,4 @@ Thumbs.db
 *.cache
 *.tmp
 .sass-cache
+.phpunit.cache

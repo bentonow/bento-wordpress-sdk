@@ -66,10 +66,7 @@ class BentoSettingsPage {
 
         $plugin_data = $this->get_plugin_data();
         $settings = get_option('bento_settings', []);
-
-//        $connection_status = !empty($settings['bento_connection_status']) ?
-//            json_decode($settings['bento_connection_status'], true) :
-//            null;
+        
 
         $admin_data = [
             'settings' => $settings,
@@ -84,7 +81,6 @@ class BentoSettingsPage {
             'nonce' => wp_create_nonce('bento_settings'),
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'adminUrl' => admin_url('admin-post.php'),
-            //'connectionStatus' => $connection_status,
             'pluginUrl' => $this->plugin_url
         ];
 
