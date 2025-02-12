@@ -40,7 +40,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const script = require('./.github/scripts/generate-release-notes.js')
+            const script = require('./.github/scripts/generate-release-notes.cjs')
             const notes = await script({github, context})
             core.setOutput('notes', notes)
 
