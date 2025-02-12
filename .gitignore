@@ -1,1 +1,16 @@
 node_modules
+vendor
+
+.vscode
+.idea
+.sublime-
+.DS_Store
+Thumbs.db
+
+/tests/coverage
+
+*.log
+*.cache
+*.tmp
+.sass-cache
+.phpunit.cache

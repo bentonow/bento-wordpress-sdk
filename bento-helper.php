@@ -69,8 +69,19 @@ class Bento_Helper {
 	 * Start plugin.
 	 */
 	public function init() {
-		// Activate notice (shown once).
-		add_action( 'admin_notices', array( $this, 'activate_notice' ) );
+
+        // Core interface and adapters
+        require_once 'inc/interfaces/mail-interfaces.php';
+        require_once 'inc/wordpress/class-wordpress-adapters.php';
+
+        // Settings and Controllers
+        require_once 'inc/class-bento-settings-controller.php';
+        require_once 'inc/class-bentosettingspage.php';
+        require_once 'inc/class-bento-events-controller.php';
+
+        // Mail handling components
+        require_once 'inc/class-bento-mail-logger.php';
+        require_once 'inc/class-bento-mail-handler.php';
 
 		if ( class_exists( 'WooCommerce' ) ) {
 			require_once 'inc/ajax.php';
@@ -82,15 +93,26 @@ class Bento_Helper {
 		require_once 'inc/forms/class-bento-bricks-form-handler.php';
 		require_once 'inc/forms/class-bento-elementor-form-handler.php';
 		require_once 'inc/forms/class-bento-thrive-themes-events.php';
-        require_once 'inc/events-controllers/class_bento_email_handler.php';
+        //require_once 'inc/events-controllers/class_bento_email_handler.php';
 		// Here we load up all the automated event handlers.
-        new Bento_Email_Handler();
+        //new Bento_Email_Handler();
 		Bento_Events_Controller::init();
 
 		// Here we load up all the different form handlers.
-		Bento_Bricks_Form_Handler::init(); # 
+		Bento_Bricks_Form_Handler::init(); #
 		Bento_Elementor_Form_Handler::init();
-	
+
+        // Initialize mail handler
+        require_once 'inc/class-bento-mail-handler.php';
+        Bento_Mail_Handler::instance()->init();
+
+        // Initialize mail admin if in admin area
+        if (is_admin()) {
+            require_once 'inc/admin/class-bento-mail-admin.php';
+            $mail_admin = new Bento_Mail_Admin();
+            $mail_admin->init();
+        }
+
 		if ( class_exists( 'WPForms' ) ) {
 			require_once 'inc/forms/class-wp-forms-form-handler.php';
 		}
@@ -126,24 +148,6 @@ class Bento_Helper {
 		}
 		if ( class_exists( 'LearnDash_Bento_Events' ) ) {
 			LearnDash_Bento_Events::remove_cron_jobs();
-		}
-	}
-
-	/**
-	 * Activation notice for onboarding at first activation or if site key is not set.
-	 */
-	public function activate_notice() {
-
-		$settings = get_option( 'bento_settings' );
-		$site_key = !empty( $settings['bento_site_key'] ) ? $settings['bento_site_key'] : false;
-
-		if ( get_option( 'bento_show_activation_notice', false ) || ! $site_key) {
-			echo '<div class="notice notice-success">
-			<p>' . sprintf( __( 'Welcome to Bento! To get started, please <a href="%s">configure your settings</a> and connect your Bento account.', 'bentonow' ), 
-			esc_url( admin_url( 'admin.php?page=bento-setting-admin' ) ) ) . '</p>
-		  </div>';
-			// Disable notice option.
-			update_option( 'bento_show_activation_notice', false );
 		}
 	}
 
