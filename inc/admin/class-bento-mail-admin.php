@@ -19,24 +19,25 @@ class Bento_Mail_Admin {
             return;
         }
 
+        if ($hook !== 'bento_page_bento-mail-logs') {
+            return;
+        }
+
         $manifest_path = plugin_dir_path(dirname(dirname(__FILE__))) . 'assets/build/manifest.json';
         if (!file_exists($manifest_path)) {
             return;
         }
 
         $manifest = json_decode(file_get_contents($manifest_path), true);
-        if (!isset($manifest['assets/js/src/app.jsx'])) {
+        if (!isset($manifest['assets/js/src/bento-app.jsx'])) {
             return;
         }
 
         // Get the app bundle
-        $app_file = $manifest['assets/js/src/app.jsx']['file'];
-        $css_files = $manifest['assets/js/src/app.jsx']['css'] ?? [];
+        $app_file = $manifest['assets/js/src/bento-app.jsx']['file'];
+        $css_files = $manifest['assets/js/src/bento-app.jsx']['css'] ?? [];
 
-        // Enqueue React
         wp_enqueue_script('wp-element');
-
-        // Enqueue our bundle
         wp_enqueue_script(
             'bento-admin-app',
             plugin_dir_url(dirname(dirname(__FILE__))) . 'assets/build/' . $app_file,
@@ -45,7 +46,6 @@ class Bento_Mail_Admin {
             true
         );
 
-        // Enqueue CSS
         foreach ($css_files as $css_file) {
             wp_enqueue_style(
                 'bento-admin-' . basename($css_file, '.css'),
@@ -55,10 +55,9 @@ class Bento_Mail_Admin {
             );
         }
 
-        // Localize script data
         $admin_data = [
             'mailLogs' => $this->logger->read_logs(1000),
-            'nonce' => wp_create_nonce('clear_bento_mail_logs'),
+            'nonce' => wp_create_nonce('bento_settings'),
             'adminUrl' => admin_url('admin-post.php')
         ];
 
@@ -88,7 +87,7 @@ class Bento_Mail_Admin {
             wp_die(__('You do not have sufficient permissions to access this page.'));
         }
 
-        check_admin_referer('clear_bento_mail_logs');
+        check_admin_referer('bento_settings');
 
         $this->logger->clear_logs();
 
