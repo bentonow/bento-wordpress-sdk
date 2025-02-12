@@ -1,5 +1,5 @@
-/node_modules
-/vendor
+node_modules
+vendor
 
 .vscode
 .idea
@@ -13,3 +13,5 @@ Thumbs.db
 *.cache
 *.tmp
 .sass-cache
+
+.phpunit.cache
