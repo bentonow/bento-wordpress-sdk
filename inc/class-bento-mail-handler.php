@@ -10,11 +10,12 @@ class Bento_Mail_Handler implements Mail_Handler_Interface {
     private $mail_logger;
 
     public function __construct(
-        ?Configuration_Interface $config = null,
-        ?Logger_Interface $logger = null,
-        ?Http_Client_Interface $http_client = null,
-        ?Mail_Logger_Interface $mail_logger = null
-    ) {
+        $config = null,
+        $logger = null,
+        $http_client = null,
+        $mail_logger = null
+    )
+    {
         $this->config = $config ?? new WordPress_Configuration();
         $this->logger = $logger ?? new WordPress_Logger();
         $this->http_client = $http_client ?? new WordPress_Http_Client();
@@ -54,7 +55,7 @@ class Bento_Mail_Handler implements Mail_Handler_Interface {
         );
     }
 
-    public function handle_mail(string $to, string $subject, string $message, array $headers = [], array $attachments = []): bool {
+    public function handle_mail($to, $subject, $message, $headers = [], $attachments = []): bool {
         $mail_id = uniqid('mail_', true);
 
         $this->mail_logger->log_mail([

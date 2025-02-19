@@ -6,7 +6,7 @@ class Bento_Mail_Logger implements Mail_Logger_Interface {
     private $max_size = 10485760; // 10MB
     private $hash_expiry = 300; // 5 minutes in seconds
 
-    public function __construct(?string $log_file = null) {
+    public function __construct($log_file = null) {
         if ($log_file) {
             $this->log_file = $log_file;
         } else {
@@ -16,7 +16,7 @@ class Bento_Mail_Logger implements Mail_Logger_Interface {
         wp_mkdir_p(dirname($this->log_file));
     }
 
-    public function log_mail(array $data): void {
+    public function log_mail($data): void {
         if (!$this->is_logging_enabled()) {
             return;
         }
@@ -31,7 +31,7 @@ class Bento_Mail_Logger implements Mail_Logger_Interface {
         $this->check_size();
     }
 
-    public function is_duplicate(string $hash): bool {
+    public function is_duplicate($hash): bool {
         $logs = $this->read_logs();
         $cutoff = time() - $this->hash_expiry;
 
@@ -51,7 +51,7 @@ class Bento_Mail_Logger implements Mail_Logger_Interface {
         file_put_contents($this->log_file, wp_json_encode([]));
     }
 
-    public function read_logs(?int $limit = null): array {
+    public function read_logs($limit = null): array {
         if (!file_exists($this->log_file)) {
             return [];
         }
