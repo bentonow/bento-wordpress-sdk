@@ -8,11 +8,11 @@ class WordPress_Configuration implements Configuration_Interface {
         $this->options = get_option('bento_settings', []);
     }
 
-    public function get_option(string $key, $default = null) {
+    public function get_option($key, $default = null) {
         return $this->options[$key] ?? get_option($key, $default);
     }
 
-    public function update_option(string $key, $value): bool {
+    public function update_option($key, $value): bool {
         Bento_Logger::log("Updating option $key to $value");
         $this->options[$key] = $value;
         return update_option('bento_settings', $this->options);
@@ -26,7 +26,7 @@ class WordPress_Configuration implements Configuration_Interface {
         ];
     }
 
-    public function validate_credentials(array $credentials): array {
+    public function validate_credentials($credentials): array {
         if (empty($credentials['site_key']) || empty($credentials['publishable_key']) || empty($credentials['secret_key'])) {
             Bento_Logger::log('Validation attempted with missing credentials');
             return $this->update_connection_status(401);
@@ -64,7 +64,7 @@ class WordPress_Configuration implements Configuration_Interface {
         return $this->validate_credentials($credentials);
     }
 
-    private function update_connection_status(int $status_code, array $data = []): array {
+    private function update_connection_status($status_code, $data = []): array {
         $status = [
             'connected' => $status_code >= 200 && $status_code < 300,
             'message' => $this->get_status_message($status_code),
@@ -82,29 +82,39 @@ class WordPress_Configuration implements Configuration_Interface {
         ];
     }
 
-    private function get_status_message(int $status_code): string {
-        return match (true) {
-            $status_code >= 200 && $status_code < 300 => 'Connected',
-            $status_code === 401 => 'Invalid credentials',
-            $status_code === 403 => 'Access denied',
-            $status_code >= 400 && $status_code < 500 => 'Invalid request',
-            default => 'Service error'
-        };
+    private function get_status_message($status_code): string {
+        if ($status_code >= 200 && $status_code < 300) {
+            return 'Connected';
+        }
+
+        if ($status_code === 401) {
+            return 'Invalid credentials';
+        }
+
+        if ($status_code === 403) {
+            return 'Access denied';
+        }
+
+        if ($status_code >= 400 && $status_code < 500) {
+            return 'Invalid request';
+        }
+
+        return 'Service error';
     }
 }
 
 class WordPress_Logger implements Logger_Interface {
-    public function log(string $message, string $level = 'info'): void {
+    public function log($message, $level = 'info'): void {
         Bento_Logger::log($message, $level);
     }
 
-    public function error(string $message): void {
+    public function error($message): void {
         Bento_Logger::error($message);
     }
 }
 
 class WordPress_Http_Client implements Http_Client_Interface {
-    public function post(string $url, array $data, array $headers = []): array {
+    public function post($url, $data, $headers = []): array {
         $args = [
             'headers' => $headers,
             'body' => wp_json_encode($data),
