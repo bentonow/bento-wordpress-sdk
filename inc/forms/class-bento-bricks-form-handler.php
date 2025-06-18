@@ -29,6 +29,11 @@ class Bento_Bricks_Form_Handler {
         $postId = $fields['postId'];
         $settings = $form->get_settings();
 
+        // Debug log: form submission received
+        if (class_exists('Bento_Logger')) {
+            Bento_Logger::log('[Bricks] Form submission received. Form ID: ' . $formId . ', Post ID: ' . $postId . '. Fields: ' . print_r($fields, true));
+        }
+
         $event_name = '$bricks_submission.form_id_' . $formId . '.post_id_' . $postId;
 
         $custom_fields = array_merge(
@@ -63,6 +68,11 @@ class Bento_Bricks_Form_Handler {
             unset($custom_fields['event']);
         }
 
+        // Debug log: event name, email, and custom fields
+        if (class_exists('Bento_Logger')) {
+            Bento_Logger::log('[Bricks] Prepared event: ' . $event_name . ', Email: ' . $email . ', Custom Fields: ' . print_r($custom_fields, true));
+        }
+
         if (!empty($email)) {
             Bento_Events_Controller::trigger_event(
                 null,
@@ -71,6 +81,10 @@ class Bento_Bricks_Form_Handler {
                 $fields,
                 $custom_fields
             );
+            // Debug log: event triggered
+            if (class_exists('Bento_Logger')) {
+                Bento_Logger::log('[Bricks] Event triggered: ' . $event_name . ' for ' . $email);
+            }
         }
     }
 }
