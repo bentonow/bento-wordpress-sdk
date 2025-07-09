@@ -24,6 +24,15 @@ if ( class_exists( 'GFForms' ) && ! class_exists( 'Bento_GFForms_Form_Handler', 
                 function( $entry, $form ) {
                     $field_data_map = [];
                     $user_email = null;
+                    $form_id = $form['id'];
+                    $form_title = $form['title'] ?? null;
+                    $event_name = '$GFormsSubmit';
+
+                    if ( $form_title ) {
+                        $event_name .= ':' . $form_title . '-' . $form_id;
+                    } else {
+                        $event_name .= ':' . $form_id;
+                    }
 
                     foreach ( $form['fields'] as $field ) {
                         $field_data_map[$field['label']] = self::_rgar( $entry, $field['id'] );
@@ -36,7 +45,7 @@ if ( class_exists( 'GFForms' ) && ! class_exists( 'Bento_GFForms_Form_Handler', 
 
                     self::send_event(
                         null,
-                        '$GFormsSubmit',
+                        $event_name,
                         $user_email,
                         null,
                         $field_data_map
