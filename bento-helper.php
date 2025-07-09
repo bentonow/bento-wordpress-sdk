@@ -93,14 +93,16 @@ class Bento_Helper {
 		require_once 'inc/forms/class-bento-bricks-form-handler.php';
 		require_once 'inc/forms/class-bento-elementor-form-handler.php';
 		require_once 'inc/forms/class-bento-thrive-themes-events.php';
+		require_once 'inc/forms/class-bento-gfforms-form-handler.php';
         //require_once 'inc/events-controllers/class_bento_email_handler.php';
 		// Here we load up all the automated event handlers.
         //new Bento_Email_Handler();
 		Bento_Events_Controller::init();
 
 		// Here we load up all the different form handlers.
-		Bento_Bricks_Form_Handler::init(); #
+		Bento_Bricks_Form_Handler::init();
 		Bento_Elementor_Form_Handler::init();
+		Bento_GFForms_Form_Handler::init();
 
         // Initialize mail handler
         require_once 'inc/class-bento-mail-handler.php';

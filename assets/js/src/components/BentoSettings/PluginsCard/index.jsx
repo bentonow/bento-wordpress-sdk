@@ -13,7 +13,8 @@ export function PluginsCard() {
     { id: 'Easy_Digital_Downloads', name: 'Easy Digital Downloads', version: versions?.Easy_Digital_Downloads },
     { id: 'ELEMENTOR_VERSION', name: 'Elementor', version: versions?.Elementor },
     { id: 'BRICKS_VERSION', name: 'Bricks Builder', version: versions?.Bricks },
-    { id: 'TVE_IN_ARCHITECT', name: 'Thrive Themes', version: versions?.Thrive }
+    { id: 'TVE_IN_ARCHITECT', name: 'Thrive Themes', version: versions?.Thrive },
+    { id: 'GForms', name: 'Gravity Forms', version: versions?.GForms }
   ];
 
   return (
