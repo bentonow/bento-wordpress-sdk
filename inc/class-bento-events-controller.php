@@ -231,7 +231,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
                 Bento_Logger::log( '[Bento] - Bento event "' . $event['type'] . '" sended. Status: ' . $event_status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				if ( ! $event_status ) {
 					// event was not sent successfully.
-					$new_events_queue[] = $event;
+					// $new_events_queue[] = $event;
 				}
 			}
 
