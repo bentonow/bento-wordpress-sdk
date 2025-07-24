@@ -23,7 +23,7 @@ class EventDeduplicationTest extends TestCase
             [
                 'user_id' => 2,
                 'type' => 'learndash_user_enrolled_in_course',
-                'email' => 'zachary.oakes@gmail.com',
+                'email' => 'test@example.com',
                 'details' => [
                     'course_id' => 1208,
                     'course_name' => 'Kickstart Your Journey As 3D Creator'
@@ -32,7 +32,7 @@ class EventDeduplicationTest extends TestCase
             [
                 'user_id' => 2,
                 'type' => 'learndash_user_enrolled_in_course',
-                'email' => 'zachary.oakes@gmail.com',
+                'email' => 'test@example.com',
                 'details' => [
                     'course_id' => 1208,
                     'course_name' => '3D Character Creation & Animation Course'
@@ -46,7 +46,7 @@ class EventDeduplicationTest extends TestCase
         $result = $deduplicate_method->invoke(null, $events);
 
         $this->assertCount(1, $result);
-        $this->assertEquals('zachary.oakes@gmail.com', $result[0]['email']);
+        $this->assertEquals('test@example.com', $result[0]['email']);
         $this->assertEquals(1208, $result[0]['details']['course_id']);
     }
 
@@ -56,7 +56,7 @@ class EventDeduplicationTest extends TestCase
             [
                 'user_id' => 2,
                 'type' => 'learndash_user_enrolled_in_course',
-                'email' => 'zachary.oakes@gmail.com',
+                'email' => 'test@example.com',
                 'details' => [
                     'course_id' => 1208,
                     'course_name' => 'Course 1'
@@ -65,7 +65,7 @@ class EventDeduplicationTest extends TestCase
             [
                 'user_id' => 2,
                 'type' => 'learndash_user_enrolled_in_course',
-                'email' => 'zachary.oakes@gmail.com',
+                'email' => 'test@example.com',
                 'details' => [
                     'course_id' => 1209,
                     'course_name' => 'Course 2'

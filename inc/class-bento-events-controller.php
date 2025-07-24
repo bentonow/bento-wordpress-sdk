@@ -51,7 +51,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		$sanitized_email = self::sanitize_email_for_logging( $email );
 		$sanitized_details = self::sanitize_details_for_logging( $details );
 		
-		Bento_Logger::info( "Enqueuing event - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}" );
+		Bento_Logger::info( "Enqueuing event - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}, Details: {$sanitized_details}" );
 		
 			if ( ! self::is_sending_events() ) {
 				$events_queue = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
@@ -328,6 +328,8 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			
 			// Deduplicate events before processing
 			$events_queue = self::deduplicate_events( $events_queue );
+			// Clear the main queue before processing to avoid duplicate processing
+			update_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
 			$queue_count = count( $events_queue );
 			
 			Bento_Logger::info( "Starting batch event processing - {$original_count} events in queue, {$queue_count} after deduplication" );
@@ -428,8 +430,16 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			$username = $parts[0];
 			$domain = $parts[1];
 			
-			// Show first 2 chars of username, mask the rest
-			$masked_username = substr( $username, 0, 2 ) . str_repeat( '*', max( 0, strlen( $username ) - 2 ) );
+			// Handle short usernames properly
+			$username_length = strlen( $username );
+			if ( $username_length === 0 ) {
+				$masked_username = '*';
+			} elseif ( $username_length === 1 ) {
+				$masked_username = $username . '*';
+			} else {
+				// Show first 2 chars of username, mask the rest
+				$masked_username = substr( $username, 0, 2 ) . str_repeat( '*', $username_length - 2 );
+			}
 			
 			return $masked_username . '@' . $domain;
 		}
