@@ -390,14 +390,17 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			}
 			
 			// Also check for the old-style temporary queue for backward compatibility
-			$temporary_queue = get_transient( self::EVENTS_QUEUE_OPTION_KEY );
+			//$temporary_queue = get_transient( self::EVENTS_QUEUE_OPTION_KEY );
 			if ( ! empty( $temporary_queue ) && is_array( $temporary_queue ) ) {
 				$temp_count = count( $temporary_queue );
 				Bento_Logger::info( "Merging {$temp_count} events from legacy temporary queue" );
 				$new_events_queue = array_merge( $new_events_queue, $temporary_queue );
 			}
+
 			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			update_option( self::EVENTS_QUEUE_OPTION_KEY, $new_events_queue );
+			
+			// TODO: We need to figure out a better way to do queues.
+			// update_option( self::EVENTS_QUEUE_OPTION_KEY, $new_events_queue );
 			
 			// Verify the queue was updated correctly
 			$final_queue_check = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
