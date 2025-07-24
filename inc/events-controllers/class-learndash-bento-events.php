@@ -14,6 +14,7 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 	class LearnDash_Bento_Events extends Bento_Events_Controller {
 		const BENTO_LAST_NOT_COMPLETED_EVENT_SENT_META_KEY = 'bento_ld_last_not_completed_event_sent';
 		const BENTO_DRIP_CONTENT_META_KEY                  = 'bento_ld_drip_content';
+		const BENTO_COURSE_ENROLLMENT_SENT_META_KEY        = 'bento_ld_course_enrollment_sent';
 		/**
 		 * Init class
 		 *
@@ -230,15 +231,44 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 				'learndash_update_course_access',
 				function( $user_id, $course_id, $course_access_list, $remove ) {
 					if ( ! $remove ) {
-						self::enqueue_event(
-							$user_id,
-							'learndash_user_enrolled_in_course',
-							get_userdata( $user_id )->user_email,
-							array(
-								'course_id'   => $course_id,
-								'course_name' => get_the_title( $course_id ),
-							)
-						);
+						try {
+							// Check if enrollment event was already sent for this user-course combination
+							$enrollment_events_sent = get_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, true );
+							if ( ! is_array( $enrollment_events_sent ) ) {
+								$enrollment_events_sent = array();
+							}
+
+							// Only send event if not already sent for this course (using isset for O(1) lookup)
+							if ( ! isset( $enrollment_events_sent[ $course_id ] ) ) {
+								$user_data = get_userdata( $user_id );
+								if ( ! $user_data ) {
+									throw new Exception( "User data not found for user ID: {$user_id}" );
+								}
+
+								self::enqueue_event(
+									$user_id,
+									'learndash_user_enrolled_in_course',
+									$user_data->user_email,
+									array(
+										'course_id'   => $course_id,
+										'course_name' => get_the_title( $course_id ),
+									)
+								);
+
+								// Mark this course enrollment as sent (store course_id as key for fast lookup)
+								$enrollment_events_sent[ $course_id ] = time();
+								update_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, $enrollment_events_sent );
+							}
+						} catch ( Exception $e ) {
+							// Log the error but don't break the site
+							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+								error_log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
+							}
+							// Optionally use Bento_Logger if available
+							if ( class_exists( 'Bento_Logger' ) ) {
+								Bento_Logger::log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
+							}
+						}
 					}
 				},
 				10,
