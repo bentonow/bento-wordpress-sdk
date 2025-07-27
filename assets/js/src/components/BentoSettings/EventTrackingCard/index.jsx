@@ -1,10 +1,93 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export function EventTrackingCard({ settings, onUpdate }) {
+  const { toast } = useToast();
+  const [purgeLoading, setPurgeLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  // Handle purge debug log action
+  const handlePurgeDebugLog = async () => {
+    setPurgeLoading(true);
+    try {
+      const response = await fetch(window.bentoAdmin.ajaxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'bento_purge_debug_log',
+          _wpnonce: window.bentoAdmin.nonce
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: data.data.message,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.data.message || "Failed to clear debug log. Please check file permissions",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clear debug log. Please check file permissions",
+        variant: "destructive"
+      });
+    } finally {
+      setPurgeLoading(false);
+    }
+  };
+
+  // Handle verify events queue action
+  const handleVerifyEventsQueue = async () => {
+    setVerifyLoading(true);
+    try {
+      const response = await fetch(window.bentoAdmin.ajaxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'bento_verify_events_queue',
+          _wpnonce: window.bentoAdmin.nonce
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: data.data.message,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.data.message || "Failed to clean event queue. Database operation failed",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clean event queue. Database operation failed",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   return (
     <Card className="mb-6 rounded-md break-inside-avoid-column">
       <CardHeader>
@@ -41,6 +124,32 @@ export function EventTrackingCard({ settings, onUpdate }) {
             onCheckedChange={(checked) => onUpdate('bento_enable_logging', checked ? '1' : '0')}
           />
         </div>
+
+        {/* Cleanup buttons - only show when debug logging is enabled */}
+        {settings.bento_enable_logging === '1' && (
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePurgeDebugLog}
+              disabled={purgeLoading || verifyLoading}
+              className="flex items-center gap-2"
+            >
+              {purgeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Purge
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleVerifyEventsQueue}
+              disabled={purgeLoading || verifyLoading}
+              className="flex items-center gap-2"
+            >
+              {verifyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Verify
+            </Button>
+          </div>
+        )}
 
 
           <div className="flex items-center justify-between">
