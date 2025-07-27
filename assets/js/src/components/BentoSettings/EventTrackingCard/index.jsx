@@ -136,7 +136,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
               className="flex items-center gap-2"
             >
               {purgeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Purge
+              Purge Logs
             </Button>
             <Button
               variant="outline"
@@ -146,7 +146,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
               className="flex items-center gap-2"
             >
               {verifyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Verify
+              Verify Queue
             </Button>
           </div>
         )}
