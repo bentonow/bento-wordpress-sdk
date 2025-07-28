@@ -4,20 +4,26 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, MailWarning } from 'lucide-react';
+import { Loader2, AlertCircle, MailWarning, RotateCcw } from 'lucide-react';
 import { callBentoApi, getConnectionStatus } from '@/lib/connection-util';
+import { useToast } from '@/hooks/use-toast';
 
 export function TransactionalCard({ settings, onUpdate }) {
   const [loading, setLoading] = useState(false);
   const [authors, setAuthors] = useState([]);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const connectionStatus = getConnectionStatus(settings);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (settings.bento_enable_transactional === '1' && connectionStatus.connected) {
-      fetchAuthors();
+      // Only auto-refresh if not currently refreshing manually
+      if (!refreshing) {
+        fetchAuthors();
+      }
     }
-  }, [settings.bento_enable_transactional, connectionStatus.connected]);
+  }, [settings.bento_enable_transactional, connectionStatus.connected, connectionStatus.timestamp, refreshing]);
 
   const fetchAuthors = async () => {
     setLoading(true);
@@ -33,6 +39,40 @@ export function TransactionalCard({ settings, onUpdate }) {
       setError('Failed to fetch authors');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (!connectionStatus.connected) return;
+    
+    setRefreshing(true);
+    setError(null);
+    try {
+      const result = await callBentoApi('bento_fetch_authors');
+      if (result.data?.data?.length) {
+        setAuthors(result.data.data);
+        toast({
+          title: "Authors Refreshed",
+          description: `Successfully loaded ${result.data.data.length} authors`,
+          variant: "default"
+        });
+      } else {
+        setError('No authors available');
+        toast({
+          title: "No Authors Found",
+          description: "No authors are available in your Bento account",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setError('Failed to fetch authors');
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh authors. Please check your connection.",
+        variant: "destructive"
+      });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -69,24 +109,35 @@ export function TransactionalCard({ settings, onUpdate }) {
     }
 
     return (
-      <Select
-        value={settings.bento_from_email}
-        onValueChange={(value) => onUpdate('bento_from_email', value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a sender" />
-        </SelectTrigger>
-        <SelectContent>
-          {authors.map((author) => (
-            <SelectItem
-              key={author.id}
-              value={author.attributes.email}
-            >
-              {author.attributes.name} ({author.attributes.email})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select
+          value={settings.bento_from_email}
+          onValueChange={(value) => onUpdate('bento_from_email', value)}
+          className="flex-1"
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a sender" />
+          </SelectTrigger>
+          <SelectContent>
+            {authors.map((author) => (
+              <SelectItem
+                key={author.id}
+                value={author.attributes.email}
+              >
+                {author.attributes.name} ({author.attributes.email})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <button
+          onClick={handleRefresh}
+          disabled={!connectionStatus.connected || refreshing}
+          className="flex items-center justify-center w-8 h-8 rounded border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Refresh authors"
+        >
+          <RotateCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
     );
   };
 
