@@ -379,10 +379,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			}
 
 			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			
-			// TODO: We need to figure out a better way to do queues.
-			// update_option( self::EVENTS_QUEUE_OPTION_KEY, $new_events_queue );
-			
+
 			// Verify the queue was updated correctly
 			$final_queue_check = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
 			$final_queue_count = count( $final_queue_check );

@@ -146,7 +146,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
               className="flex items-center gap-2"
             >
               {verifyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Verify Queue
+              Clear Queue
             </Button>
           </div>
         )}
