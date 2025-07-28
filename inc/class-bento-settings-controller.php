@@ -11,6 +11,8 @@ class Bento_Settings_Controller {
         add_action('wp_ajax_bento_fetch_authors', [$this, 'handle_fetch_authors']);
         add_action('wp_ajax_bento_purge_debug_log', [$this, 'handle_purge_debug_log']);
         add_action('wp_ajax_bento_verify_events_queue', [$this, 'handle_verify_events_queue']);
+        add_action('wp_ajax_bento_send_event_notification', [$this, 'handle_send_event_notification']);
+        add_action('wp_ajax_bento_get_latest_event', [$this, 'handle_get_latest_event']);
     }
 
     public function handle_update_settings(): void {
@@ -119,6 +121,41 @@ class Bento_Settings_Controller {
         } catch (Exception $e) {
             error_log('Bento: Failed to verify events queue - ' . $e->getMessage());
             wp_send_json_error(['message' => 'Failed to clean event queue. Database operation failed']);
+        }
+    }
+
+    public function handle_send_event_notification(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        $event_data = [
+            'type' => sanitize_text_field($_POST['event_type']),
+            'integration' => sanitize_text_field($_POST['integration_source']),
+            'email' => sanitize_email($_POST['email']),
+            'timestamp' => absint($_POST['timestamp'])
+        ];
+        
+        wp_send_json_success(['event' => $event_data]);
+    }
+
+    public function handle_get_latest_event(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        $event_data = get_transient('bento_latest_event');
+        
+        if ($event_data) {
+            // Delete transient after retrieval to prevent duplicates
+            delete_transient('bento_latest_event');
+            wp_send_json_success(['event' => $event_data]);
+        } else {
+            wp_send_json_success(['event' => null]);
         }
     }
 }
