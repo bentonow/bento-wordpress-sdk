@@ -160,15 +160,14 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			// Always assume success and clear from queue, but log response for debugging
 			Bento_Logger::info( "Event sent (assuming success) - Type: {$type}, Email: {$sanitized_email}, Response code: {$response_code}, Body: " . substr( $response_body, 0, 200 ) );
 
-			// Trigger frontend notification if admin is viewing Bento page
-			if ( is_admin() && current_user_can( 'manage_options' ) ) {
-				try {
-					$integration_source = self::detect_integration_source();
-					self::trigger_frontend_notification( $type, $integration_source, $email );
-				} catch ( Exception $e ) {
-					// Don't let notification failures affect event sending
-					Bento_Logger::info( "Frontend notification failed but event was sent successfully: " . $e->getMessage() );
-				}
+			// Trigger frontend notification for real-time display
+			try {
+				$integration_source = self::detect_integration_source();
+				self::trigger_frontend_notification( $type, $integration_source, $email );
+				Bento_Logger::info( "Frontend notification triggered - Type: {$type}, Integration: {$integration_source}, Email: {$sanitized_email}" );
+			} catch ( Exception $e ) {
+				// Don't let notification failures affect event sending
+				Bento_Logger::info( "Frontend notification failed but event was sent successfully: " . $e->getMessage() );
 			}
 
 			return true;
