@@ -64,14 +64,18 @@ if ( ! class_exists( 'WP_Bento_Events', false ) ) {
 					}
 
 					// send event.
-					self::enqueue_event(
-						$user->ID,
-						'user_not_logged_since',
-						$user->user_email,
-						array(
-							'last_login' => get_user_meta( $user->ID, self::BENTO_LAST_LOGIN_META_KEY, true ),
-						)
-					);
+					try {
+						self::send_event(
+							$user->ID,
+							'user_not_logged_since',
+							$user->user_email,
+							array(
+								'last_login' => get_user_meta( $user->ID, self::BENTO_LAST_LOGIN_META_KEY, true ),
+							)
+						);
+					} catch (Exception $e) {
+						error_log('Bento WP: Failed to send login verification event - ' . $e->getMessage());
+					}
 					// set last event sent.
 					update_user_meta( $user->ID, self::BENTO_LAST_LOGIN_EVENT_SENT_META_KEY, time() );
 				}
