@@ -185,7 +185,7 @@ export function TransactionalCard({ settings, onUpdate }) {
               />
             </div>
 
-            <Alert className="flex flex-row items-center gap-2">
+            <Alert className="flex flex-row items-center gap-2 bg-zinc-50">
               <MailWarning className="h-8 w-8 pt-0 pr-2 -mt-2 stroke-zinc-500" />
               <AlertDescription className="ml-2">
                 Bento Transactional Email is designed for low volume transactional emails.

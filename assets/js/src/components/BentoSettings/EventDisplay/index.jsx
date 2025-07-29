@@ -27,14 +27,14 @@ export function EventDisplay() {
 
   const fetchLatestEvent = async () => {
     try {
-      const response = await fetch(window.ajaxurl, {
+      const response = await fetch(window.bentoAdmin.ajaxUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
           action: 'bento_get_latest_event',
-          _wpnonce: window.bento_nonce
+          _wpnonce: window.bentoAdmin.nonce
         })
       });
 
@@ -62,8 +62,11 @@ export function EventDisplay() {
             });
           }, 5000);
           
-          // Add new event to front and limit to 5 events
-          const updatedEvents = [newEvent, ...prevEvents].slice(0, 5);
+          // Add new event and sort by timestamp (newest first), then limit to 5 events
+          const allEvents = [newEvent, ...prevEvents];
+          const sortedEvents = allEvents.sort((a, b) => b.timestamp - a.timestamp); // Sort newest first
+          const updatedEvents = sortedEvents.slice(0, 5); // Take first 5 (newest) events
+          
           return updatedEvents;
         });
       }
@@ -119,7 +122,7 @@ export function EventDisplay() {
 
   const EmptyState = () => (
     <div className="text-center py-8 text-gray-500">
-      <div className="text-2xl mb-2">📡</div>
+      <div className="text-2xl mb-2"><img src={`${window.bentoAdmin?.pluginUrl || ''}/assets/img/bento-pixel-art.webp`} alt={'live event image'} className={'m-auto h-24 w-24'} /></div>
       <p className="text-sm">No recent events</p>
       <p className="text-xs text-gray-400 mt-1">
         Live events will appear here as they occur
@@ -130,13 +133,22 @@ export function EventDisplay() {
   return (
     <Card className="mb-6 rounded-md break-inside-avoid-column">
       <CardHeader>
-        <CardTitle>Live Events</CardTitle>
+        <CardTitle>
+          <div className="flex items-center space-x-2">
+            <div className="relative w-3 h-3">
+              <div className="absolute inset-0 rounded-full bg-emerald-200 animate-ping" />
+              <div className="relative rounded-full bg-emerald-500 w-2 h-2 m-auto top-1/2 transform -translate-y-1/2" />
+            </div>
+            <span>Live Event Sampling</span>
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {events.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="space-y-2">
+            {/* Events are displayed in order: newest first (top of list) */}
             {events.map((event) => (
               <EventItem 
                 key={event.id} 

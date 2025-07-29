@@ -29,14 +29,22 @@ class Bento_Mail_Handler implements Mail_Handler_Interface {
         return self::$instance;
     }
 
+    private static $initialized = false;
+
     public function init(): void {
+        if (self::$initialized) {
+            $this->logger->log('Mail handler already initialized, skipping');
+            return; // Already initialized
+        }
+
         if (!$this->is_enabled()) {
             $this->logger->log('Transactional emails not enabled, skipping initialization');
             return;
         }
 
         add_filter('pre_wp_mail', [$this, 'handle_wp_mail'], 10, 2);
-        $this->logger->log('Added pre_wp_mail filter');
+
+        self::$initialized = true;
     }
 
     public function handle_wp_mail($null, array $atts): ?bool {

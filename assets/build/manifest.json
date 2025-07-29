@@ -1,13 +1,13 @@
 {
   "assets/js/src/bento-app.css": {
-    "file": "bento-app-8a485c4a.css",
+    "file": "bento-app-62016b94.css",
     "src": "assets/js/src/bento-app.css"
   },
   "assets/js/src/bento-app.jsx": {
     "css": [
-      "bento-app-8a485c4a.css"
+      "bento-app-62016b94.css"
     ],
-    "file": "app-0bed4d00.js",
+    "file": "app-c1d4e128.js",
     "isEntry": true,
     "src": "assets/js/src/bento-app.jsx"
   }
