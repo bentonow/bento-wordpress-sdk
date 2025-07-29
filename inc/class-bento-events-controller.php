@@ -164,10 +164,8 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			try {
 				$integration_source = self::detect_integration_source();
 				self::trigger_frontend_notification( $type, $integration_source, $email );
-				Bento_Logger::info( "Frontend notification triggered - Type: {$type}, Integration: {$integration_source}, Email: {$sanitized_email}" );
 			} catch ( Exception $e ) {
 				// Don't let notification failures affect event sending
-				Bento_Logger::info( "Frontend notification failed but event was sent successfully: " . $e->getMessage() );
 			}
 
 			return true;
@@ -528,6 +526,15 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 				}
 				if ( strpos( $class, 'EDD' ) !== false ) {
 					return 'EDD';
+				}
+				if ( strpos( $class, 'WPForms' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Action_After_Submit' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Bricks_Form_Handler' ) !== false ) {
+					return 'Forms';
 				}
 				if ( strpos( $class, 'Form' ) !== false ) {
 					return 'Forms';

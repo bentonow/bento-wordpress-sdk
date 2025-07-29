@@ -93,32 +93,59 @@ export function EventDisplay() {
     };
   }, []);
 
-  const EventItem = ({ event, isNew }) => (
-    <div className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 motion-safe:hover:scale-[1.01] ${
-      isNew ? 'motion-safe:animate-in motion-safe:slide-in-from-top-2 motion-safe:duration-500 bg-blue-50 border-blue-200' : 'bg-white'
-    }`}>
-      <span className="text-lg flex-shrink-0">{integrationIcons[event.integration]}</span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap">
-          <Badge variant="secondary" className="text-xs flex-shrink-0">
-            {event.integration}
-          </Badge>
-          <span className="text-sm font-medium text-gray-900 truncate">
-            {event.type}
-          </span>
-        </div>
-        <p className="text-sm text-gray-500 truncate mt-1">{event.email}</p>
-      </div>
-      <div className="flex flex-col items-end text-right flex-shrink-0">
-        <span className="text-xs text-gray-400 whitespace-nowrap">
-          {formatTimestamp(event.timestamp)}
+  const EventItem = ({ event, isNew }) => {
+    const isError = event.is_error;
+    
+    return (
+      <div className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-300 hover:bg-gray-50 hover:border-gray-300 motion-safe:hover:scale-[1.01] ${
+        isNew ? 'motion-safe:animate-in motion-safe:slide-in-from-top-2 motion-safe:duration-500' : ''
+      } ${
+        isError 
+          ? 'bg-red-50 border-red-200 hover:bg-red-100' 
+          : isNew 
+            ? 'bg-blue-50 border-blue-200' 
+            : 'bg-white'
+      }`}>
+        <span className="text-lg flex-shrink-0">
+          {isError ? '⚠️' : integrationIcons[event.integration]}
         </span>
-        {isNew && (
-          <span className="text-xs text-blue-600 font-medium mt-1">New</span>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap">
+            <Badge variant={isError ? "destructive" : "secondary"} className="text-xs flex-shrink-0">
+              {isError ? 'Error' : event.integration}
+            </Badge>
+            <span className={`text-sm font-medium truncate ${
+              isError ? 'text-red-900' : 'text-gray-900'
+            }`}>
+              {event.type}
+            </span>
+          </div>
+          <p className={`text-sm truncate mt-1 ${
+            isError ? 'text-red-700' : 'text-gray-500'
+          }`}>
+            {isError ? event.message : event.email}
+          </p>
+          {isError && event.action_required && (
+            <p className="text-xs text-red-600 mt-1 font-medium">
+              Action required: {event.action_required}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end text-right flex-shrink-0">
+          <span className="text-xs text-gray-400 whitespace-nowrap">
+            {formatTimestamp(event.timestamp)}
+          </span>
+          {isNew && (
+            <span className={`text-xs font-medium mt-1 ${
+              isError ? 'text-red-600' : 'text-blue-600'
+            }`}>
+              {isError ? 'Error' : 'New'}
+            </span>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const EmptyState = () => (
     <div className="text-center py-8 text-gray-500">
