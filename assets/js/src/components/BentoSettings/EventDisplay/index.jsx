@@ -149,7 +149,16 @@ export function EventDisplay() {
 
   const EmptyState = () => (
     <div className="text-center py-8 text-gray-500">
-      <div className="text-2xl mb-2"><img src={`${window.bentoAdmin?.pluginUrl || ''}/assets/img/bento-pixel-art.webp`} alt={'live event image'} className={'m-auto h-24 w-24'} /></div>
+      <div className="text-2xl mb-2">
+        <video
+          src={`${window.bentoAdmin?.pluginUrl || ''}/assets/img/bento-placeholder.mp4`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="m-auto h-24 w-24 rounded"
+        ></video>
+      </div>
       <p className="text-sm">No recent events</p>
       <p className="text-xs text-gray-400 mt-1">
         Live events will appear here as they occur
