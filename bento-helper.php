@@ -102,7 +102,10 @@ class Bento_Helper {
 		// Here we load up all the different form handlers.
 		Bento_Bricks_Form_Handler::init();
 		Bento_Elementor_Form_Handler::init();
-		Bento_GFForms_Form_Handler::init();
+		
+		if ( class_exists( 'Bento_GFForms_Form_Handler' ) ) {
+			Bento_GFForms_Form_Handler::init();
+		}
 
         // Initialize mail handler
         require_once 'inc/class-bento-mail-handler.php';
