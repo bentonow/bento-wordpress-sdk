@@ -1,6 +1,6 @@
 <?php
 
-uses()->group('unit');
-
+uses()->group('unit')->in('Unit');
+uses()->group('feature')->in('Feature');
 
 
