@@ -45,42 +45,17 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * @param array  $details The event details.
 		 */
 	protected static function enqueue_event( $user_id, $type, $email, $details = array() ) {
-		// Always enqueue events regardless of recurrence setting
-		// Events will be processed when cron runs or manually triggered
-		
-		$sanitized_email = self::sanitize_email_for_logging( $email );
+		$sanitized_email   = self::sanitize_email_for_logging( $email );
 		$sanitized_details = self::sanitize_details_for_logging( $details );
-		
-		Bento_Logger::info( "Enqueuing event - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}, Details: {$sanitized_details}" );
-		
-		$new_event = array(
-			'user_id' => $user_id,
-			'type'    => $type,
-			'email'   => $email,
-			'details' => $details,
-		);
 
-		if ( ! self::is_sending_events() ) {
-			$events_queue = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$events_queue[] = $new_event;
-			update_option( self::EVENTS_QUEUE_OPTION_KEY, $events_queue );
-			Bento_Logger::info( "Event queued to database - Queue size: " . count( $events_queue ) );
-		} else {
-			// When processing is happening, use a different approach to avoid race conditions
-			$temp_queue_key = self::EVENTS_QUEUE_OPTION_KEY . '_temp_' . time() . '_' . wp_rand( 1000, 9999 );
-			set_transient( $temp_queue_key, array( $new_event ), DAY_IN_SECONDS );
-			
-			// Add this temp queue key to a list so we can merge them later
-			$temp_queue_keys = get_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-			if ( ! $temp_queue_keys ) {
-				$temp_queue_keys = array();
-			}
-			$temp_queue_keys[] = $temp_queue_key;
-			set_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys', $temp_queue_keys, DAY_IN_SECONDS );
-			
-			Bento_Logger::info( "Event queued to temporary transient during processing - Key: {$temp_queue_key}" );
+		Bento_Logger::info( "Dispatching event immediately - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}, Details: {$sanitized_details}" );
+
+		$sent = self::send_event( $user_id, $type, $email, $details );
+
+		if ( ! $sent ) {
+			Bento_Logger::error( "Event failed to send and will not be re-queued - Type: {$type}, Email: {$sanitized_email}" );
 		}
-		}
+	}
 
 		public static function trigger_event($user_id, $type, $email, $details = array(), $custom_fields = array()) {
 			return self::send_event($user_id, $type, $email, $details, $custom_fields);
@@ -311,88 +286,11 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * Send events in the queue to Bento.
 		 */
 		public static function bento_send_events_hook() {
-			if ( self::is_sending_events() ) {
-				Bento_Logger::info( 'Events processing already in progress - skipping' );
-				return; // Already sending events.
-			}
-
-			$events_queue = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$original_count = count( $events_queue );
-			
-			if ( empty( $events_queue ) ) {
-				Bento_Logger::info( 'No events in queue to process' );
-				return;
-			}
-			
-			// Deduplicate events before processing
-			$events_queue = self::deduplicate_events( $events_queue );
-			// Clear the main queue before processing to avoid duplicate processing
-			update_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$queue_count = count( $events_queue );
-			
-			Bento_Logger::info( "Starting batch event processing - {$original_count} events in queue, {$queue_count} after deduplication" );
-			Bento_Logger::info( "Queue cleared - verifying empty: " . count( get_option( self::EVENTS_QUEUE_OPTION_KEY, array() ) ) . " events remaining" );
-
-			// set the transient to true so we know we're sending events.
-			set_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY, true, HOUR_IN_SECONDS * 6 );
-
-			$new_events_queue = array();
-			$sent_count = 0;
-			$failed_count = 0;
-			
-			foreach ( $events_queue as $event ) {
-				$event_status = self::send_event( $event['user_id'], $event['type'], $event['email'], $event['details'] );
-				
-				if ( $event_status ) {
-					$sent_count++;
-					Bento_Logger::info( "Event sent successfully - removing from queue: {$event['type']} for " . self::sanitize_email_for_logging( $event['email'] ) );
-				} else {
-					$failed_count++;
-					// event was not sent successfully.
-					$new_events_queue[] = $event;
-					Bento_Logger::info( "Event failed - keeping in queue: {$event['type']} for " . self::sanitize_email_for_logging( $event['email'] ) );
-				}
-			}
-
-			// merge temporary queues with the permanent queue.
-			$temp_queue_keys = get_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-			if ( ! empty( $temp_queue_keys ) && is_array( $temp_queue_keys ) ) {
-				$temp_events_merged = 0;
-				foreach ( $temp_queue_keys as $temp_key ) {
-					$temp_queue = get_transient( $temp_key );
-					if ( ! empty( $temp_queue ) && is_array( $temp_queue ) ) {
-						$new_events_queue = array_merge( $new_events_queue, $temp_queue );
-						$temp_events_merged += count( $temp_queue );
-					}
-					delete_transient( $temp_key );
-				}
-				delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-				Bento_Logger::info( "Merged {$temp_events_merged} events from " . count( $temp_queue_keys ) . " temporary queues" );
-			}
-			
-			// Also check for the old-style temporary queue for backward compatibility
-			$temporary_queue = get_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			if ( ! empty( $temporary_queue ) && is_array( $temporary_queue ) ) {
-				$temp_count = count( $temporary_queue );
-				Bento_Logger::info( "Merging {$temp_count} events from legacy temporary queue" );
-				$new_events_queue = array_merge( $new_events_queue, $temporary_queue );
-			}
-
+			Bento_Logger::info( 'Event queue is disabled; skipping batch processing.' );
+			// Clear any legacy data so the option does not grow unbounded.
+			delete_option( self::EVENTS_QUEUE_OPTION_KEY );
 			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			
-			// TODO: We need to figure out a better way to do queues.
-			// update_option( self::EVENTS_QUEUE_OPTION_KEY, $new_events_queue );
-			
-			// Verify the queue was updated correctly
-			$final_queue_check = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$final_queue_count = count( $final_queue_check );
-
-			// finish sending events.
-			delete_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY );
-			
-			$remaining_count = count( $new_events_queue );
-			Bento_Logger::info( "Batch processing complete - Sent: {$sent_count}, Failed: {$failed_count}, Remaining in queue: {$remaining_count}" );
-			Bento_Logger::info( "Final queue verification - Expected: {$remaining_count}, Actual in DB: {$final_queue_count}" );
+			delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
 		}
 
 		/**

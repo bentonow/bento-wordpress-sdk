@@ -87,6 +87,40 @@ test('sends mail via bento api', function () {
     expect($result)->toBeTrue();
 });
 
+test('handle_wp_mail sends to each recipient', function () {
+    $this->config->shouldReceive('get_option')
+        ->with('bento_site_key')
+        ->andReturn('site_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_publishable_key')
+        ->andReturn('pub_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_secret_key')
+        ->andReturn('secret_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_from_email', m::any())
+        ->andReturn('from@example.com');
+    $this->config->shouldReceive('get_option')
+        ->with('admin_email')
+        ->andReturn('admin@example.com');
+
+    $this->httpClient->shouldReceive('post')
+        ->times(2)
+        ->andReturn(['status_code' => 200]);
+
+    $this->mailLogger->shouldReceive('log_mail')->times(4);
+    $this->mailLogger->shouldReceive('is_duplicate')->andReturn(false);
+
+    $result = $this->handler->handle_wp_mail(null, [
+        'to' => 'one@example.com, two@example.com',
+        'subject' => 'Subject',
+        'message' => 'Message',
+        'headers' => [],
+    ]);
+
+    expect($result)->toBeTrue();
+});
+
 test('blocks duplicate emails', function () {
     $hash = md5('test@example.com' . 'Test Subject' . 'Test Message');
 
