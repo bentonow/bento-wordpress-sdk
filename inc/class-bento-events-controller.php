@@ -11,10 +11,11 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 	/**
 	 * Class Bento_Events_Controller
 	 */
-	class Bento_Events_Controller {
-		const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/api/v1/batch/events';
-		const EVENTS_QUEUE_OPTION_KEY         = 'bento_events_queue';
-		const IS_SENDING_EVENTS_TRANSIENT_KEY = 'bento_sending_events';
+		class Bento_Events_Controller {
+			const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/api/v1/batch/events';
+			const EVENTS_QUEUE_OPTION_KEY         = 'bento_events_queue';
+			const IS_SENDING_EVENTS_TRANSIENT_KEY = 'bento_sending_events';
+			const EVENTS_QUEUE_CLEANUP_FLAG       = 'bento_events_queue_cleanup_done';
 
 		/**
 		 * Bento configuration options
@@ -178,28 +179,41 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function init() {
 			add_action( 'init', array( __CLASS__, 'load_events_controllers' ) );
-
-			$interval = self::get_bento_option( 'bento_events_recurrence' );
-			// Use default 3-minute interval if not set
-			if ( empty( $interval ) ) {
-				$interval = 3;
-			}
-			
-			// add cron job to send events to Bento.
-			add_filter( 'cron_schedules', array( __CLASS__, 'add_events_cron_interval' ) ); // phpcs:ignore WordPress.WP.CronInterval
 			add_action( 'bento_send_events_hook', array( __CLASS__, 'bento_send_events_hook' ) );
 
-			if ( ! wp_next_scheduled( 'bento_send_events_hook' ) ) {
-				wp_schedule_event( time(), 'bento_send_events_interval', 'bento_send_events_hook' );
-			}
+			self::disable_legacy_event_queue_cron();
 		}
 
 		/**
 		 * Unschedule the Bento events cron job. Used when the plugin is deactivated.
 		 */
 		public static function remove_cron_jobs() {
-			$send_events_timestamp = wp_next_scheduled( 'bento_send_events_hook' );
-			wp_unschedule_event( $send_events_timestamp, 'bento_send_events_hook' );
+			self::disable_legacy_event_queue_cron();
+		}
+
+		/**
+		 * Disable the legacy cron job and clean up queued data.
+		 */
+		private static function disable_legacy_event_queue_cron() {
+			wp_clear_scheduled_hook( 'bento_send_events_hook' );
+
+			if ( get_option( self::EVENTS_QUEUE_CLEANUP_FLAG ) ) {
+				return;
+			}
+
+			Bento_Logger::info( 'Cleaning up legacy Bento events queue artifacts.' );
+			self::cleanup_legacy_event_queue();
+
+			update_option( self::EVENTS_QUEUE_CLEANUP_FLAG, time() );
+		}
+
+		/**
+		 * Remove legacy queue options and transients.
+		 */
+		private static function cleanup_legacy_event_queue() {
+			delete_option( self::EVENTS_QUEUE_OPTION_KEY );
+			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
+			delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
 		}
 
 		/**
@@ -287,10 +301,7 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function bento_send_events_hook() {
 			Bento_Logger::info( 'Event queue is disabled; skipping batch processing.' );
-			// Clear any legacy data so the option does not grow unbounded.
-			delete_option( self::EVENTS_QUEUE_OPTION_KEY );
-			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
+			self::cleanup_legacy_event_queue();
 		}
 
 		/**
