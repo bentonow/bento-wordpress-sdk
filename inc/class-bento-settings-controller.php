@@ -127,19 +127,116 @@ class Bento_Settings_Controller {
 
     public function handle_send_event_notification(): void {
         check_ajax_referer('bento_settings', '_wpnonce');
-        
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Permission denied']);
         }
-        
-        $event_data = [
-            'type' => sanitize_text_field($_POST['event_type']),
-            'integration' => sanitize_text_field($_POST['integration_source']),
-            'email' => sanitize_email($_POST['email']),
-            'timestamp' => absint($_POST['timestamp'])
+
+        $installed_integrations = [
+            'WooCommerce' => class_exists('WooCommerce'),
+            'LearnDash' => defined('LEARNDASH_VERSION'),
+            'SureCart' => class_exists('SureCart'),
+            'EDD' => class_exists('Easy_Digital_Downloads'),
+            'Forms' => class_exists('WPForms') || class_exists('ElementorPro') || class_exists('Bento_Elementor_Form_Handler'),
         ];
-        
+
+        $available = array_keys(array_filter($installed_integrations));
+        if (empty($available)) {
+            $available = ['Unknown'];
+        }
+
+        $integration = $available[array_rand($available)];
+
+        $unique_suffix = uniqid('', true);
+        $email = $this->config->get_option('bento_from_email');
+
+        if (empty($email)) {
+            $authors_response = $this->config->fetch_authors();
+            $author_list = $authors_response['data']['data'] ?? [];
+            if (!empty($author_list) && !empty($author_list[0]['attributes']['email'])) {
+                $email = $author_list[0]['attributes']['email'];
+            }
+        }
+
+        if (empty($email)) {
+            wp_send_json_error(['message' => 'Please configure a Bento author email before sending a test event.']);
+        }
+
+        $event_type = '$test_event.' . strtolower(str_replace(' ', '_', $integration));
+        $details = $this->generate_test_event_details($integration, $unique_suffix);
+        $custom_fields = [
+            'bento_debug_test' => true,
+            'integration' => $integration,
+            'unique_ref' => $unique_suffix,
+        ];
+
+        $result = Bento_Events_Controller::trigger_event(
+            get_current_user_id(),
+            $event_type,
+            $email,
+            $details,
+            $custom_fields
+        );
+
+        if (!$result) {
+            wp_send_json_error(['message' => 'Failed to send test event to Bento. Check API credentials.']);
+        }
+
+        $event_data = [
+            'id' => 'test_' . $unique_suffix,
+            'type' => $event_type,
+            'integration' => $integration,
+            'email' => $email,
+            'timestamp' => time(),
+            'message' => 'Debug test event successfully dispatched to Bento.',
+            'is_error' => false,
+        ];
+
+        set_transient('bento_latest_event', $event_data, 60);
+
         wp_send_json_success(['event' => $event_data]);
+    }
+
+    private function generate_test_event_details($integration, $suffix) {
+        switch ($integration) {
+            case 'WooCommerce':
+                return [
+                    'order_id' => 'test-order-' . substr($suffix, -6),
+                    'value' => [
+                        'currency' => 'USD',
+                        'amount' => 1999,
+                    ],
+                ];
+            case 'LearnDash':
+                return [
+                    'course_id' => rand(1000, 9999),
+                    'course_name' => 'Sample Course',
+                    'progress' => rand(10, 90),
+                ];
+            case 'SureCart':
+                return [
+                    'checkout_id' => 'test-checkout-' . substr($suffix, -6),
+                    'status' => 'paid',
+                    'value' => [
+                        'currency' => 'USD',
+                        'amount' => 2999,
+                    ],
+                ];
+            case 'EDD':
+                return [
+                    'download_id' => rand(2000, 9999),
+                    'download_name' => 'Sample Download',
+                ];
+            case 'Forms':
+                return [
+                    'form_id' => rand(1, 100),
+                    'form_title' => 'Sample Form Submission',
+                ];
+            default:
+                return [
+                    'note' => 'Generic test event',
+                ];
+        }
     }
 
     public function handle_get_latest_event(): void {

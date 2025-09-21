@@ -11,6 +11,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
   const { toast } = useToast();
   const [purgeLoading, setPurgeLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
 
   // Handle purge debug log action
   const handlePurgeDebugLog = async () => {
@@ -88,6 +89,43 @@ export function EventTrackingCard({ settings, onUpdate }) {
     }
   };
 
+  const handleTestEvent = async () => {
+    setTestLoading(true);
+    try {
+      const response = await fetch(window.bentoAdmin.ajaxUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'bento_send_event_notification',
+          _wpnonce: window.bentoAdmin.nonce,
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: 'Test Event Sent',
+          description: 'A test event is being displayed in the live event sampling.',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.data?.message || 'Failed to send test event.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send test event.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <Card className="mb-6 rounded-md break-inside-avoid-column">
       <CardHeader>
@@ -132,7 +170,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
               variant="outline"
               size="sm"
               onClick={handlePurgeDebugLog}
-              disabled={purgeLoading || verifyLoading}
+              disabled={purgeLoading || verifyLoading || testLoading}
               className="flex items-center gap-2"
             >
               {purgeLoading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -142,11 +180,21 @@ export function EventTrackingCard({ settings, onUpdate }) {
               variant="outline"
               size="sm"
               onClick={handleVerifyEventsQueue}
-              disabled={purgeLoading || verifyLoading}
+              disabled={purgeLoading || verifyLoading || testLoading}
               className="flex items-center gap-2"
             >
               {verifyLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Clear Queue
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTestEvent}
+              disabled={purgeLoading || verifyLoading || testLoading}
+              className="flex items-center gap-2"
+            >
+              {testLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              Test Event
             </Button>
           </div>
         )}

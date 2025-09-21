@@ -4,7 +4,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, MailWarning } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, MailWarning, RotateCcw } from 'lucide-react';
 import { callBentoApi, getConnectionStatus } from '@/lib/connection-util';
 
 export function TransactionalCard({ settings, onUpdate }) {
@@ -69,24 +70,36 @@ export function TransactionalCard({ settings, onUpdate }) {
     }
 
     return (
-      <Select
-        value={settings.bento_from_email}
-        onValueChange={(value) => onUpdate('bento_from_email', value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a sender" />
-        </SelectTrigger>
-        <SelectContent>
-          {authors.map((author) => (
-            <SelectItem
-              key={author.id}
-              value={author.attributes.email}
-            >
-              {author.attributes.name} ({author.attributes.email})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center space-x-2">
+        <Select
+          value={settings.bento_from_email}
+          onValueChange={(value) => onUpdate('bento_from_email', value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a sender" />
+          </SelectTrigger>
+          <SelectContent>
+            {authors.map((author) => (
+              <SelectItem
+                key={author.id}
+                value={author.attributes.email}
+              >
+                {author.attributes.name} ({author.attributes.email})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={fetchAuthors}
+          disabled={loading}
+          aria-label="Refresh Bento authors"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+        </Button>
+      </div>
     );
   };
 

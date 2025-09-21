@@ -146,3 +146,33 @@ test('handle_fetch_authors returns data when authorized', function () {
     expect($config->fetchAuthorsCalled)->toBeTrue();
     expect($__wp_test_state['json'][0]['authors'])->toBe(['alice']);
 });
+
+test('handle_send_event_notification falls back to first author when no from email set', function () {
+    global $__wp_test_state;
+    $__wp_test_state['options']['bento_settings'] = [
+        'bento_site_key' => 'site-key',
+        'bento_publishable_key' => 'pub-key',
+        'bento_secret_key' => 'sec-key',
+    ];
+    $__wp_test_state['remote_posts'] = [];
+
+    $config = new FakeConfiguration();
+    $config->fetchAuthorsResponse = [
+        'success' => true,
+        'data' => [
+            'data' => [
+                ['attributes' => ['email' => 'author@example.com']],
+            ],
+        ],
+    ];
+
+    $controller = new Bento_Settings_Controller($config);
+
+    expect(function () use ($controller) {
+        $controller->handle_send_event_notification();
+    })->toThrow(\RuntimeException::class, 'wp_send_json_success');
+
+    expect($config->fetchAuthorsCalled)->toBeTrue();
+    expect($__wp_test_state['json_success'][0]['event']['email'])->toBe('author@example.com');
+    expect($__wp_test_state['remote_posts'])->toHaveCount(1);
+});
