@@ -134,6 +134,20 @@ export function TransactionalCard({ settings, onUpdate }) {
               />
             </div>
 
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reply-to" className="flex flex-col space-y-1">
+                <span>Include Reply-To Header</span>
+                <span className="font-normal text-sm text-muted-foreground">
+                  Pass any Reply-To value from WordPress to Bento
+                </span>
+              </Label>
+              <Switch
+                id="reply-to"
+                checked={settings.bento_enable_reply_to !== '0'}
+                onCheckedChange={(checked) => onUpdate('bento_enable_reply_to', checked ? '1' : '0')}
+              />
+            </div>
+
             <Alert className="flex flex-row items-center gap-2">
               <MailWarning className="h-8 w-8 pt-0 pr-2 -mt-2 stroke-zinc-500" />
               <AlertDescription className="ml-2">

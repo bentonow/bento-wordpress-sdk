@@ -152,6 +152,10 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
     $reply_to =
       $parsed_headers['Reply-To'] ?? ($parsed_headers['reply-to'] ?? null);
 
+    if ($this->config->get_option('bento_enable_reply_to', '1') !== '1') {
+      $reply_to = null;
+    }
+
     $result = $this->send_via_bento([
       'id' => $mail_id,
       'to' => $to,
