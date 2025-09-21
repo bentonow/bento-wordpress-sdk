@@ -90,6 +90,19 @@ test('SureCart checkout handles scalar metadata gracefully', function () {
     expect($fields['first_name'])->toBe('Casey');
 });
 
+test('SureCart checkout skips event when email missing', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+
+    $controller = new SureCart_Bento_Events();
+    $checkout = new Test_SureCart_Checkout();
+    $checkout->email = '';
+
+    $controller->handle_checkout_confirmed($checkout, null);
+
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});
+
 test('SureCart order detail hydration includes line items', function () {
     $controller = new SureCart_Bento_Events();
 

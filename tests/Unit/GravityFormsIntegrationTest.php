@@ -86,3 +86,30 @@ test('Gravity Forms handler falls back to ID when title missing', function () {
 
     expect($event['type'])->toBe('$GFormsSubmit:99');
 });
+
+test('Gravity Forms handler skips dispatch when email value missing', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+
+    Bento_GFForms_Form_Handler::init();
+    $hook = $__wp_test_state['actions']['gform_after_submission'][0];
+    $callback = $hook['callback'];
+
+    $form = [
+        'id' => 24,
+        'title' => 'No Email Form',
+        'fields' => [
+            ['id' => '1', 'label' => 'Email', 'type' => 'email'],
+            ['id' => '2', 'label' => 'Name', 'type' => 'text'],
+        ],
+    ];
+
+    $entry = [
+        '1' => '',
+        '2' => 'Taylor',
+    ];
+
+    $callback($entry, $form);
+
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});

@@ -36,6 +36,11 @@ $__wp_test_state = [
     'scheduled_events' => [],
     'scheduled_events_lookup' => [],
     'unscheduled_events' => [],
+    'json' => [],
+    'json_error' => [],
+    'wc_instance' => null,
+    'current_user' => (object) ['ID' => 0, 'user_email' => null],
+    'cleared_hooks' => [],
 ];
 
 if (!function_exists('wp_test_reset_state')) {
@@ -57,12 +62,17 @@ if (!function_exists('wp_test_reset_state')) {
         $__wp_test_state['submenu_pages'] = [];
         $__wp_test_state['checked_nonces'] = [];
         $__wp_test_state['json_success'] = [];
+        $__wp_test_state['json'] = [];
+        $__wp_test_state['json_error'] = [];
         $__wp_test_state['redirects'] = [];
         $__wp_test_state['current_user_can'] = true;
         $__wp_test_state['doing_ajax'] = false;
         $__wp_test_state['scheduled_events'] = [];
         $__wp_test_state['scheduled_events_lookup'] = [];
         $__wp_test_state['unscheduled_events'] = [];
+        $__wp_test_state['wc_instance'] = null;
+        $__wp_test_state['current_user'] = (object) ['ID' => 0, 'user_email' => null];
+        $__wp_test_state['cleared_hooks'] = [];
     }
 }
 
@@ -152,6 +162,13 @@ if (!function_exists('wp_remote_post')) {
     function wp_remote_post($url, $args = []) {
         global $__wp_test_state;
         $__wp_test_state['remote_posts'][] = ['url' => $url, 'args' => $args];
+        if (!empty($__wp_test_state['wp_remote_post_error'])) {
+            return new WP_Error('http_request_failed', 'Simulated request failure');
+        }
+
+        if (!empty($__wp_test_state['wp_remote_post_response'])) {
+            return $__wp_test_state['wp_remote_post_response'];
+        }
 
         return [
             'body' => json_encode(['success' => true]),
@@ -162,25 +179,52 @@ if (!function_exists('wp_remote_post')) {
 
 if (!function_exists('wp_remote_retrieve_body')) {
     function wp_remote_retrieve_body($response) {
+        if (is_wp_error($response)) {
+            return '';
+        }
         return $response['body'] ?? '';
+    }
+}
+
+if (!class_exists('WP_Error')) {
+    class WP_Error {
+        public function __construct(private string $code = '', private string $message = '', private $data = null) {}
+
+        public function get_error_message() {
+            return $this->message;
+        }
+
+        public function get_error_code() {
+            return $this->code;
+        }
+
+        public function get_error_data() {
+            return $this->data;
+        }
     }
 }
 
 if (!function_exists('wp_remote_retrieve_response_code')) {
     function wp_remote_retrieve_response_code($response) {
+        if (is_wp_error($response)) {
+            return 0;
+        }
         return $response['response']['code'] ?? 0;
     }
 }
 
 if (!function_exists('wp_remote_retrieve_headers')) {
     function wp_remote_retrieve_headers($response) {
+        if (is_wp_error($response)) {
+            return [];
+        }
         return $response['headers'] ?? [];
     }
 }
 
 if (!function_exists('is_wp_error')) {
     function is_wp_error($thing) {
-        return false;
+        return $thing instanceof WP_Error;
     }
 }
 
@@ -213,6 +257,23 @@ if (!function_exists('do_action')) {
     }
 }
 
+if (!function_exists('apply_filters')) {
+    function apply_filters($hook, $value, ...$args) {
+        global $__wp_test_state;
+        if (empty($__wp_test_state['actions'][$hook])) {
+            return $value;
+        }
+
+        foreach ($__wp_test_state['actions'][$hook] as $registered) {
+            $callback = $registered['callback'];
+            $accepted_args = $registered['accepted_args'];
+            $value = $callback(...array_slice([$value, ...$args], 0, $accepted_args));
+        }
+
+        return $value;
+    }
+}
+
 if (!function_exists('wp_next_scheduled')) {
     function wp_next_scheduled($hook) {
         global $__wp_test_state;
@@ -220,10 +281,34 @@ if (!function_exists('wp_next_scheduled')) {
     }
 }
 
+if (!function_exists('WC')) {
+    function WC() {
+        global $__wp_test_state;
+        if ($__wp_test_state['wc_instance'] === null) {
+            $__wp_test_state['wc_instance'] = (object) [
+                'session' => null,
+                'customer' => null,
+                'cart' => null,
+            ];
+        }
+
+        return $__wp_test_state['wc_instance'];
+    }
+}
+
 if (!function_exists('wp_unschedule_event')) {
     function wp_unschedule_event($timestamp, $hook) {
         global $__wp_test_state;
         $__wp_test_state['unscheduled_events'][] = compact('timestamp', 'hook');
+        unset($__wp_test_state['scheduled_events_lookup'][$hook]);
+        return true;
+    }
+}
+
+if (!function_exists('wp_clear_scheduled_hook')) {
+    function wp_clear_scheduled_hook($hook) {
+        global $__wp_test_state;
+        $__wp_test_state['cleared_hooks'][] = $hook;
         unset($__wp_test_state['scheduled_events_lookup'][$hook]);
         return true;
     }
@@ -356,6 +441,27 @@ if (!function_exists('check_admin_referer')) {
     }
 }
 
+if (!function_exists('check_ajax_referer')) {
+    function check_ajax_referer($action = -1, $query_arg = false, $die = true) {
+        global $__wp_test_state;
+        $__wp_test_state['checked_nonces'][] = [
+            'action' => $action,
+            'query_arg' => $query_arg,
+            'type' => 'ajax',
+        ];
+
+        if (!empty($__wp_test_state['fail_ajax_nonce'])) {
+            if ($die) {
+                throw new RuntimeException('wp_die: check_ajax_referer failed');
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('wp_doing_ajax')) {
     function wp_doing_ajax() {
         global $__wp_test_state;
@@ -368,6 +474,14 @@ if (!function_exists('wp_send_json_success')) {
         global $__wp_test_state;
         $__wp_test_state['json_success'][] = $data;
         throw new RuntimeException('wp_send_json_success');
+    }
+}
+
+if (!function_exists('wp_send_json')) {
+    function wp_send_json($data = null) {
+        global $__wp_test_state;
+        $__wp_test_state['json'][] = $data;
+        throw new RuntimeException('wp_send_json');
     }
 }
 
@@ -401,6 +515,16 @@ if (!function_exists('add_query_arg')) {
     function add_query_arg($args, $url) {
         $query = http_build_query($args);
         return rtrim($url, '?') . '?' . $query;
+    }
+}
+
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field($str) {
+        if (is_scalar($str)) {
+            return trim(strip_tags((string) $str));
+        }
+
+        return '';
     }
 }
 
@@ -467,6 +591,13 @@ if (!function_exists('get_current_user_id')) {
     }
 }
 
+if (!function_exists('wp_get_current_user')) {
+    function wp_get_current_user() {
+        global $__wp_test_state;
+        return $__wp_test_state['current_user'] ?? (object) ['ID' => 0, 'user_email' => null];
+    }
+}
+
 if (!function_exists('wpforms_log')) {
     function wpforms_log() {}
 }
@@ -516,6 +647,46 @@ if (!class_exists('WC_Customer')) {
         public function get_total_spent() {
             global $__wp_test_state;
             return $__wp_test_state['wc_customers'][$this->id]['total_spent'] ?? 0;
+        }
+    }
+}
+
+if (!class_exists('WC_Session_Handler')) {
+    class WC_Session_Handler {
+        private bool $has_session = false;
+
+        public function init() {
+            $this->has_session = true;
+        }
+
+        public function has_session() {
+            return $this->has_session;
+        }
+
+        public function set_customer_session_cookie($force = false) {
+            $this->has_session = true;
+        }
+    }
+}
+
+if (!class_exists('WC_Cart')) {
+    class WC_Cart {
+        private array $items = [];
+
+        public function set_items(array $items): void {
+            $this->items = $items;
+        }
+
+        public function get_cart() {
+            return $this->items;
+        }
+
+        public function is_empty() {
+            return empty($this->items);
+        }
+
+        public function get_cart_contents_count() {
+            return count($this->items);
         }
     }
 }
@@ -655,7 +826,9 @@ if (!class_exists('GFCommon')) {
 
 if (!function_exists('wp_send_json_error')) {
     function wp_send_json_error($data = null) {
-        throw new RuntimeException('wp_send_json_error called');
+        global $__wp_test_state;
+        $__wp_test_state['json_error'][] = $data;
+        throw new RuntimeException('wp_send_json_error');
     }
 }
 

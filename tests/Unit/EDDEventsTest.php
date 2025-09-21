@@ -175,3 +175,30 @@ test('EDD refund emits negative value event', function () {
     expect($event['type'])->toBe('$DownloadRefunded');
     expect($event['details']['value']['amount'])->toBe(-49.99);
 });
+
+test('EDD handlers skip dispatch when order data is unavailable', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+
+    new EDD_Bento_Events();
+
+    $hook = $__wp_test_state['actions']['edd_complete_purchase'][0];
+    $callback = $hook['callback'];
+    $callback(9999);
+
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});
+
+test('EDD verified download skips when download missing or email invalid', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+
+    new EDD_Bento_Events();
+
+    $hook = $__wp_test_state['actions']['edd_process_verified_download'][0];
+    $callback = $hook['callback'];
+
+    $callback(1234, '');
+
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});

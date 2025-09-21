@@ -239,6 +239,9 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			$duplicate_count = 0;
 
 			foreach ( $events_queue as $event ) {
+				if ( ! is_array( $event ) ) {
+					continue;
+				}
 				$dedup_key = self::generate_dedup_key( $event );
 				
 				if ( ! in_array( $dedup_key, $seen_keys, true ) ) {
@@ -263,6 +266,10 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * @return string The deduplication key.
 		 */
 		private static function generate_dedup_key( $event ) {
+			if ( ! is_array( $event ) ) {
+				return md5( '' );
+			}
+
 			$key_parts = array(
 				$event['email'] ?? '',
 				$event['type'] ?? '',

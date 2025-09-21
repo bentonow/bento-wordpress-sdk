@@ -132,4 +132,23 @@ class EventDeduplicationTest extends TestCase
         $this->assertIsString($key);
         $this->assertEquals(32, strlen($key)); // MD5 hash length
     }
+
+    public function test_handles_malformed_events_gracefully()
+    {
+        $events = [
+            'malformed-entry',
+            [
+                'email' => 'valid@example.com',
+                'type' => 'learndash_user_enrolled_in_course',
+            ],
+        ];
+
+        $deduplicate_method = $this->events_controller->getMethod('deduplicate_events');
+        $deduplicate_method->setAccessible(true);
+
+        $result = $deduplicate_method->invoke(null, $events);
+
+        $this->assertCount(1, $result);
+        $this->assertEquals('valid@example.com', $result[0]['email']);
+    }
 }

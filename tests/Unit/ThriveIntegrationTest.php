@@ -70,3 +70,19 @@ test('Thrive connection dispatches Bento event when adding subscriber', function
     expect($event['type'])->toBe('$thrive.optin.form-1');
     expect($event['email'])->toBe('thrive@example.com');
 });
+
+test('Thrive connection skips dispatch when email missing', function () {
+    global $__wp_test_state;
+
+    $__wp_test_state['remote_posts'] = [];
+
+    $connection = new \Thrive_Dash_List_Connection_Bento('bento');
+    $result = $connection->add_subscriber('main_list', [
+        'email' => '',
+        'name' => 'No Email',
+        'form_identifier' => 'form-2',
+    ]);
+
+    expect($result)->toBeFalse();
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});
