@@ -528,6 +528,27 @@ if (!function_exists('sanitize_text_field')) {
     }
 }
 
+if (!function_exists('sanitize_email')) {
+    function sanitize_email($email) {
+        return filter_var($email, FILTER_SANITIZE_EMAIL);
+    }
+}
+
+if (!function_exists('sanitize_title')) {
+    function sanitize_title($title) {
+        $title = strtolower(strip_tags($title));
+        $title = preg_replace('/[^a-z0-9]+/', '-', $title);
+        return trim($title, '-');
+    }
+}
+
+if (!function_exists('sanitize_key')) {
+    function sanitize_key($key) {
+        $key = strtolower($key);
+        return preg_replace('/[^a-z0-9_]/', '', $key);
+    }
+}
+
 if (!function_exists('get_user_meta')) {
     function get_user_meta($user_id, $key, $single = true) {
         global $__wp_test_state;

@@ -7,7 +7,7 @@ export function PluginsCard() {
   const { plugins, versions } = window.bentoAdmin || {};
   const pluginsList = [
     { id: 'WooCommerce', name: 'WooCommerce', version: versions?.WooCommerce },
-    { id: 'LEARNDASH_VERSION', name: 'LearnDash', version: versions?.LearnDash },
+    { id: 'LEARNDASH_VERSION', name: 'LearnDash', version: versions?.LEARNDASH_VERSION },
     { id: 'SureCart', name: 'SureCart', version: versions?.SureCart },
     { id: 'WPForms', name: 'WPForms', version: versions?.WPForms },
     { id: 'Easy_Digital_Downloads', name: 'Easy Digital Downloads', version: versions?.Easy_Digital_Downloads },

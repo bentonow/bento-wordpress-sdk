@@ -136,6 +136,14 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			// Always assume success and clear from queue, but log response for debugging
 			Bento_Logger::info( "Event sent (assuming success) - Type: {$type}, Email: {$sanitized_email}, Response code: {$response_code}, Body: " . substr( $response_body, 0, 200 ) );
 
+			// Trigger frontend notification for real-time display
+			try {
+				$integration_source = self::detect_integration_source();
+				self::trigger_frontend_notification( $type, $integration_source, $email );
+			} catch ( Exception $e ) {
+				// Don't let notification failures affect event sending
+			}
+
 			return true;
 		}
 
@@ -203,7 +211,6 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 
 			Bento_Logger::info( 'Cleaning up legacy Bento events queue artifacts.' );
 			self::cleanup_legacy_event_queue();
-
 			update_option( self::EVENTS_QUEUE_CLEANUP_FLAG, time() );
 		}
 
@@ -299,6 +306,64 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			}
 			
 			return '[keys: ' . implode( ', ', $safe_keys ) . ']';
+		}
+
+		/**
+		 * Detect integration source from backtrace
+		 *
+		 * @return string The integration source.
+		 */
+		private static function detect_integration_source() {
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 10 );
+			
+			foreach ( $backtrace as $trace ) {
+				$class = $trace['class'] ?? '';
+				if ( strpos( $class, 'WooCommerce' ) !== false ) {
+					return 'WooCommerce';
+				}
+				if ( strpos( $class, 'LearnDash' ) !== false ) {
+					return 'LearnDash';
+				}
+				if ( strpos( $class, 'SureCart' ) !== false ) {
+					return 'SureCart';
+				}
+				if ( strpos( $class, 'EDD' ) !== false ) {
+					return 'EDD';
+				}
+				if ( strpos( $class, 'WPForms' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Action_After_Submit' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Bricks_Form_Handler' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Form' ) !== false ) {
+					return 'Forms';
+				}
+			}
+			return 'Unknown';
+		}
+
+		/**
+		 * Trigger frontend notification for real-time event display
+		 *
+		 * @param string $event_type    The event type.
+		 * @param string $integration   The integration source.
+		 * @param string $email         The email address.
+		 */
+		private static function trigger_frontend_notification( $event_type, $integration, $email ) {
+			// Store in WordPress transient for immediate pickup by frontend
+			$event_data = array(
+				'id'          => uniqid(),
+				'type'        => $event_type,
+				'integration' => $integration,
+				'email'       => self::sanitize_email_for_logging( $email ),
+				'timestamp'   => time(),
+			);
+			
+			set_transient( 'bento_latest_event', $event_data, 60 ); // 1 minute expiry
 		}
 		
 

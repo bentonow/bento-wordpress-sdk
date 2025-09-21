@@ -9,6 +9,11 @@ class Bento_Settings_Controller {
         add_action('wp_ajax_bento_update_settings', [$this, 'handle_update_settings']);
         add_action('wp_ajax_bento_validate_connection', [$this, 'handle_validate_connection']);
         add_action('wp_ajax_bento_fetch_authors', [$this, 'handle_fetch_authors']);
+        add_action('wp_ajax_bento_purge_debug_log', [$this, 'handle_purge_debug_log']);
+        add_action('wp_ajax_bento_verify_events_queue', [$this, 'handle_verify_events_queue']);
+        add_action('wp_ajax_bento_send_event_notification', [$this, 'handle_send_event_notification']);
+        add_action('wp_ajax_bento_get_latest_event', [$this, 'handle_get_latest_event']);
+        add_action('wp_ajax_test_bento_event', [$this, 'handle_test_bento_event']);
     }
 
     public function handle_update_settings(): void {
@@ -49,5 +54,137 @@ class Bento_Settings_Controller {
 
         $result = $this->config->fetch_authors();
         wp_send_json($result);
+    }
+
+    /**
+     * Handle debug log purge request
+     * Clears the WordPress debug.log file to reclaim disk space
+     */
+    public function handle_purge_debug_log(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+            return;
+        }
+
+        try {
+            $debug_log_path = WP_CONTENT_DIR . '/debug.log';
+            
+            // Check if file exists before attempting to clear it
+            if (!file_exists($debug_log_path)) {
+                wp_send_json_success(['message' => 'Debug log successfully cleared']);
+                return;
+            }
+
+            // Check if file is writable
+            if (!is_writable($debug_log_path)) {
+                wp_send_json_error(['message' => 'Failed to clear debug log. Please check file permissions']);
+                return;
+            }
+
+            // Clear the debug log by writing empty content
+            $result = file_put_contents($debug_log_path, '');
+            
+            if ($result === false) {
+                wp_send_json_error(['message' => 'Failed to clear debug log. Please check file permissions']);
+                return;
+            }
+
+            wp_send_json_success(['message' => 'Debug log successfully cleared']);
+            
+        } catch (Exception $e) {
+            error_log('Bento: Failed to purge debug log - ' . $e->getMessage());
+            wp_send_json_error(['message' => 'Failed to clear debug log. Please check file permissions']);
+        }
+    }
+
+    /**
+     * Handle event queue verification request
+     * Removes the bento_events_queue option from the database
+     */
+    public function handle_verify_events_queue(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+            return;
+        }
+
+        try {
+            // Remove the bento_events_queue option from the database
+            $result = delete_option('bento_events_queue');
+            
+            // delete_option returns true if the option was deleted, false if it didn't exist
+            // Both cases are considered successful for this operation
+            wp_send_json_success(['message' => 'Event queue successfully cleaned']);
+            
+        } catch (Exception $e) {
+            error_log('Bento: Failed to verify events queue - ' . $e->getMessage());
+            wp_send_json_error(['message' => 'Failed to clean event queue. Database operation failed']);
+        }
+    }
+
+    public function handle_send_event_notification(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        $event_data = [
+            'type' => sanitize_text_field($_POST['event_type']),
+            'integration' => sanitize_text_field($_POST['integration_source']),
+            'email' => sanitize_email($_POST['email']),
+            'timestamp' => absint($_POST['timestamp'])
+        ];
+        
+        wp_send_json_success(['event' => $event_data]);
+    }
+
+    public function handle_get_latest_event(): void {
+        check_ajax_referer('bento_settings', '_wpnonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        $event_data = get_transient('bento_latest_event');
+        
+        if ($event_data) {
+            // Delete transient after retrieval to prevent duplicates
+            delete_transient('bento_latest_event');
+            wp_send_json_success(['event' => $event_data]);
+        } else {
+            wp_send_json_success(['event' => null]);
+        }
+    }
+    
+    public function handle_test_bento_event(): void {
+        check_ajax_referer('test_bento_event', '_wpnonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+        
+        try {
+            // Test event trigger
+            $result = Bento_Events_Controller::trigger_event(
+                1, // user_id
+                'test_wpforms_event',
+                'test@example.com',
+                ['test' => 'data'],
+                ['custom_field' => 'test_value']
+            );
+            
+            wp_send_json_success([
+                'message' => 'Test event triggered',
+                'result' => $result,
+                'timestamp' => time()
+            ]);
+            
+        } catch (Exception $e) {
+            wp_send_json_error(['message' => 'Test failed: ' . $e->getMessage()]);
+        }
     }
 }
