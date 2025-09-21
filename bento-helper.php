@@ -87,9 +87,7 @@ class Bento_Helper {
 			require_once 'inc/ajax.php';
 		}
 
-		require_once 'inc/class-bentosettingspage.php';
 		require_once 'inc/custom.php';
-		require_once 'inc/class-bento-events-controller.php';
 		require_once 'inc/forms/class-bento-bricks-form-handler.php';
 		require_once 'inc/forms/class-bento-elementor-form-handler.php';
 		require_once 'inc/forms/class-bento-thrive-themes-events.php';
@@ -108,7 +106,6 @@ class Bento_Helper {
 		}
 
         // Initialize mail handler
-        require_once 'inc/class-bento-mail-handler.php';
         Bento_Mail_Handler::instance()->init();
 
         // Initialize mail admin if in admin area
@@ -181,4 +178,3 @@ function bento_helper() {
 
 
 bento_helper();
-

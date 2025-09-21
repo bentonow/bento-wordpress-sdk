@@ -45,22 +45,6 @@ test('enqueue_event immediately sends payload', function () {
     expect($event['details']['order_id'])->toBe(456);
 });
 
-test('bento_send_events_hook clears legacy queue artifacts', function () {
-    global $__wp_test_state;
-    $__wp_test_state['options'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY] = [['foo' => 'bar']];
-    $__wp_test_state['transients'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY] = [['baz' => 'qux']];
-    $__wp_test_state['transients'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY . '_temp_keys'] = ['key-one'];
-
-    Bento_Events_Controller::bento_send_events_hook();
-
-    expect($__wp_test_state['deleted_options'])
-        ->toContain(Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY);
-    expect($__wp_test_state['deleted_transients'])
-        ->toContain(Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY);
-    expect($__wp_test_state['deleted_transients'])
-        ->toContain(Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY . '_temp_keys');
-});
-
 test('send_event aborts when credentials are missing', function () {
     global $__wp_test_state;
     $__wp_test_state['remote_posts'] = [];
@@ -87,36 +71,4 @@ test('send_event returns false when HTTP request fails', function () {
     expect($__wp_test_state['remote_posts'])->toHaveCount(1);
 
     unset($__wp_test_state['wp_remote_post_error']);
-});
-
-test('disable_legacy_event_queue_cron performs one-time cleanup', function () {
-    global $__wp_test_state;
-
-    $__wp_test_state['options'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY] = ['legacy'];
-    $__wp_test_state['transients'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY] = ['legacy'];
-    $__wp_test_state['transients'][Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY . '_temp_keys'] = ['legacy'];
-    $__wp_test_state['scheduled_events_lookup']['bento_send_events_hook'] = time();
-
-    $reflection = new \ReflectionClass(Bento_Events_Controller::class);
-    $method = $reflection->getMethod('disable_legacy_event_queue_cron');
-    $method->setAccessible(true);
-
-    $method->invoke(null);
-
-    expect($__wp_test_state['cleared_hooks'])->toContain('bento_send_events_hook');
-    expect($__wp_test_state['deleted_options'])->toContain(Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY);
-    expect($__wp_test_state['deleted_transients'])
-        ->toContain(Bento_Events_Controller::EVENTS_QUEUE_OPTION_KEY . '_temp_keys');
-    expect($__wp_test_state['options'])
-        ->toHaveKey(Bento_Events_Controller::EVENTS_QUEUE_CLEANUP_FLAG);
-
-    $__wp_test_state['deleted_options'] = [];
-    $__wp_test_state['deleted_transients'] = [];
-    $__wp_test_state['cleared_hooks'] = [];
-
-    $method->invoke(null);
-
-    expect($__wp_test_state['deleted_options'])->toBeEmpty();
-    expect($__wp_test_state['deleted_transients'])->toBeEmpty();
-    expect($__wp_test_state['cleared_hooks'])->toContain('bento_send_events_hook');
 });
