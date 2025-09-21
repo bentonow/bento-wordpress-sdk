@@ -137,7 +137,11 @@ class BentoSettingsPage {
             'TVE_IN_ARCHITECT' => [
                 'installed' => defined('TVE_IN_ARCHITECT'),
                 'version' => defined('TVE_VERSION') ? TVE_VERSION : null
-            ]
+            ],
+            'GForms' => [
+                'installed' => class_exists('GFCommon'),
+                'version' => class_exists('GFCommon') ? GFCommon::$version : null
+            ],
         ];
     }
 }
