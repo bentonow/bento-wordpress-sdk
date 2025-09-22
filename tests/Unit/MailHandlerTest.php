@@ -15,7 +15,9 @@ beforeEach(function() {
     $this->httpClient = m::mock(Http_Client_Interface::class);
     $this->mailLogger = m::mock(Mail_Logger_Interface::class);
     $this->config->shouldReceive('get_option')->with('bento_enable_transactional')->andReturn('1');
+    $this->config->shouldReceive('get_option')->with('bento_enable_reply_to', '1')->andReturn('1')->byDefault();
     $this->logger->shouldReceive('log');
+    $this->logger->shouldReceive('error')->byDefault();
 
     $this->handler = new Bento_Mail_Handler(
         $this->config,
@@ -73,6 +75,10 @@ test('sends mail via bento api', function () {
 
     $this->httpClient->shouldReceive('post')
         ->once()
+        ->withArgs(function ($url, $payload, $headers) {
+            return isset($payload['emails'][0]['reply_to'])
+                && $payload['emails'][0]['reply_to'] === 'reply@example.com';
+        })
         ->andReturn(['status_code' => 200]);
 
     $this->mailLogger->shouldReceive('log_mail')->twice();
@@ -81,10 +87,70 @@ test('sends mail via bento api', function () {
     $result = $this->handler->handle_mail(
         'test@example.com',
         'Test Subject',
-        'Test Message'
+        'Test Message',
+        [
+            'Reply-To: reply@example.com'
+        ]
     );
 
     expect($result)->toBeTrue();
+});
+
+test('handle_wp_mail sends to each recipient', function () {
+    $this->config->shouldReceive('get_option')
+        ->with('bento_site_key')
+        ->andReturn('site_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_publishable_key')
+        ->andReturn('pub_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_secret_key')
+        ->andReturn('secret_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_from_email', m::any())
+        ->andReturn('from@example.com');
+    $this->config->shouldReceive('get_option')
+        ->with('admin_email')
+        ->andReturn('admin@example.com');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_enable_reply_to', '1')
+        ->andReturn('1');
+
+    $this->httpClient->shouldReceive('post')
+        ->times(2)
+        ->andReturn(['status_code' => 200]);
+
+    $this->mailLogger->shouldReceive('log_mail')->times(4);
+    $this->mailLogger->shouldReceive('is_duplicate')->andReturn(false);
+
+    $result = $this->handler->handle_wp_mail(null, [
+        'to' => 'one@example.com, two@example.com',
+        'subject' => 'Subject',
+        'message' => 'Message',
+        'headers' => [],
+    ]);
+
+    expect($result)->toBeTrue();
+});
+
+test('handle_wp_mail with attachments returns control to WordPress', function () {
+    $this->mailLogger->shouldReceive('log_mail')
+        ->once()
+        ->withArgs(fn($data) => $data['type'] === 'mail_received');
+
+    $this->mailLogger->shouldReceive('log_mail')
+        ->once()
+        ->withArgs(fn($data) => $data['type'] === 'wordpress_fallback');
+
+    $result = $this->handler->handle_wp_mail(null, [
+        'to' => 'attachments@example.com',
+        'subject' => 'Docs',
+        'message' => 'See attached',
+        'headers' => [],
+        'attachments' => ['file.pdf'],
+    ]);
+
+    expect($result)->toBeNull();
 });
 
 test('blocks duplicate emails', function () {
@@ -111,6 +177,46 @@ test('blocks duplicate emails', function () {
         'test@example.com',
         'Test Subject',
         'Test Message'
+    );
+
+    expect($result)->toBeTrue();
+});
+
+test('omits reply_to when feature toggle disabled', function () {
+    $this->config->shouldReceive('get_option')
+        ->with('bento_site_key')
+        ->andReturn('site_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_publishable_key')
+        ->andReturn('pub_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_secret_key')
+        ->andReturn('secret_key');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_from_email', m::any())
+        ->andReturn('from@example.com');
+    $this->config->shouldReceive('get_option')
+        ->with('admin_email')
+        ->andReturn('admin@example.com');
+    $this->config->shouldReceive('get_option')
+        ->with('bento_enable_reply_to', '1')
+        ->andReturn('0');
+
+    $this->httpClient->shouldReceive('post')
+        ->once()
+        ->withArgs(function ($url, $payload, $headers) {
+            return !isset($payload['emails'][0]['reply_to']);
+        })
+        ->andReturn(['status_code' => 200]);
+
+    $this->mailLogger->shouldReceive('log_mail')->twice();
+    $this->mailLogger->shouldReceive('is_duplicate')->andReturn(false);
+
+    $result = $this->handler->handle_mail(
+        'test@example.com',
+        'Subject',
+        'Message',
+        ['Reply-To: reply@example.com']
     );
 
     expect($result)->toBeTrue();

@@ -1,0 +1,74 @@
+<?php
+
+namespace Tests\Unit;
+
+use Bento_Events_Controller;
+
+beforeEach(function () {
+    wp_test_reset_state();
+
+    $reflection = new \ReflectionClass(Bento_Events_Controller::class);
+    $property = $reflection->getProperty('bento_options');
+    $property->setAccessible(true);
+    $property->setValue(null, [
+        'bento_site_key' => 'site-key',
+        'bento_publishable_key' => 'pub-key',
+        'bento_secret_key' => 'secret-key',
+    ]);
+});
+
+afterEach(function () {
+    $reflection = new \ReflectionClass(Bento_Events_Controller::class);
+    $property = $reflection->getProperty('bento_options');
+    $property->setAccessible(true);
+    $property->setValue(null, []);
+});
+
+test('enqueue_event immediately sends payload', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+    unset($__wp_test_state['options']['bento_settings']);
+
+    $reflection = new \ReflectionClass(Bento_Events_Controller::class);
+    $method = $reflection->getMethod('enqueue_event');
+    $method->setAccessible(true);
+
+    $method->invoke(null, 123, '$OrderPlaced', 'buyer@example.com', ['order_id' => 456]);
+
+    expect($__wp_test_state['remote_posts'])->toHaveCount(1);
+
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+    $event = $payload['events'][0];
+
+    expect($event['type'])->toBe('$OrderPlaced');
+    expect($event['email'])->toBe('buyer@example.com');
+    expect($event['details']['order_id'])->toBe(456);
+});
+
+test('send_event aborts when credentials are missing', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+
+    $reflection = new \ReflectionClass(Bento_Events_Controller::class);
+    $property = $reflection->getProperty('bento_options');
+    $property->setAccessible(true);
+    $property->setValue(null, []);
+
+    $result = Bento_Events_Controller::trigger_event(1, '$OrderPlaced', 'buyer@example.com');
+
+    expect($result)->toBeFalse();
+    expect($__wp_test_state['remote_posts'])->toBeEmpty();
+});
+
+test('send_event returns false when HTTP request fails', function () {
+    global $__wp_test_state;
+    $__wp_test_state['remote_posts'] = [];
+    $__wp_test_state['wp_remote_post_error'] = true;
+
+    $result = Bento_Events_Controller::trigger_event(1, '$OrderPlaced', 'buyer@example.com');
+
+    expect($result)->toBeFalse();
+    expect($__wp_test_state['remote_posts'])->toHaveCount(1);
+
+    unset($__wp_test_state['wp_remote_post_error']);
+});

@@ -105,6 +105,10 @@ class Thrive_Dash_List_Connection_Bento extends Thrive_Dash_List_Connection_Abst
 	 * @return mixed|string
 	 */
 	public function add_subscriber( $list_identifier, $arguments ) {
+		if ( empty( $arguments['email'] ) || ! is_email( $arguments['email'] ) ) {
+			return false;
+		}
+
 		$name_array = array();
 		
 		if ( ! empty( $arguments['name'] ) ) {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ConnectionCard } from './ConnectionCard';
+import { EventDisplay } from './EventDisplay';
 import { TransactionalCard } from './TransactionalCard';
 import { EventTrackingCard } from './EventTrackingCard';
 import { PluginsCard } from './PluginsCard';
@@ -61,6 +62,9 @@ export default function BentoSettings() {
         </div>
         {settings.bento_site_key && (
           <>
+            <div className="pb-6 break-inside-avoid-column">
+              <EventDisplay />
+            </div>
             <div className="pb-6 break-inside-avoid-column">
               <TransactionalCard settings={settings} onUpdate={updateSetting} />
             </div>

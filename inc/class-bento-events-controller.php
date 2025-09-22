@@ -11,10 +11,11 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 	/**
 	 * Class Bento_Events_Controller
 	 */
-	class Bento_Events_Controller {
-		const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/api/v1/batch/events';
-		const EVENTS_QUEUE_OPTION_KEY         = 'bento_events_queue';
-		const IS_SENDING_EVENTS_TRANSIENT_KEY = 'bento_sending_events';
+		class Bento_Events_Controller {
+			const BENTO_API_EVENT_ENDPOINT        = 'https://app.bentonow.com/api/v1/batch/events';
+			const EVENTS_QUEUE_OPTION_KEY         = 'bento_events_queue';
+			const IS_SENDING_EVENTS_TRANSIENT_KEY = 'bento_sending_events';
+			const EVENTS_QUEUE_CLEANUP_FLAG       = 'bento_events_queue_cleanup_done';
 
 		/**
 		 * Bento configuration options
@@ -45,42 +46,17 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 * @param array  $details The event details.
 		 */
 	protected static function enqueue_event( $user_id, $type, $email, $details = array() ) {
-		// Always enqueue events regardless of recurrence setting
-		// Events will be processed when cron runs or manually triggered
-		
-		$sanitized_email = self::sanitize_email_for_logging( $email );
+		$sanitized_email   = self::sanitize_email_for_logging( $email );
 		$sanitized_details = self::sanitize_details_for_logging( $details );
-		
-		Bento_Logger::info( "Enqueuing event - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}, Details: {$sanitized_details}" );
-		
-		$new_event = array(
-			'user_id' => $user_id,
-			'type'    => $type,
-			'email'   => $email,
-			'details' => $details,
-		);
 
-		if ( ! self::is_sending_events() ) {
-			$events_queue = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$events_queue[] = $new_event;
-			update_option( self::EVENTS_QUEUE_OPTION_KEY, $events_queue );
-			Bento_Logger::info( "Event queued to database - Queue size: " . count( $events_queue ) );
-		} else {
-			// When processing is happening, use a different approach to avoid race conditions
-			$temp_queue_key = self::EVENTS_QUEUE_OPTION_KEY . '_temp_' . time() . '_' . wp_rand( 1000, 9999 );
-			set_transient( $temp_queue_key, array( $new_event ), DAY_IN_SECONDS );
-			
-			// Add this temp queue key to a list so we can merge them later
-			$temp_queue_keys = get_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-			if ( ! $temp_queue_keys ) {
-				$temp_queue_keys = array();
-			}
-			$temp_queue_keys[] = $temp_queue_key;
-			set_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys', $temp_queue_keys, DAY_IN_SECONDS );
-			
-			Bento_Logger::info( "Event queued to temporary transient during processing - Key: {$temp_queue_key}" );
+		Bento_Logger::info( "Dispatching event immediately - Type: {$type}, Email: {$sanitized_email}, User ID: {$user_id}, Details: {$sanitized_details}" );
+
+		$sent = self::send_event( $user_id, $type, $email, $details );
+
+		if ( ! $sent ) {
+			Bento_Logger::error( "Event failed to send and will not be re-queued - Type: {$type}, Email: {$sanitized_email}" );
 		}
-		}
+	}
 
 		public static function trigger_event($user_id, $type, $email, $details = array(), $custom_fields = array()) {
 			return self::send_event($user_id, $type, $email, $details, $custom_fields);
@@ -160,6 +136,14 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			// Always assume success and clear from queue, but log response for debugging
 			Bento_Logger::info( "Event sent (assuming success) - Type: {$type}, Email: {$sanitized_email}, Response code: {$response_code}, Body: " . substr( $response_body, 0, 200 ) );
 
+			// Trigger frontend notification for real-time display
+			try {
+				$integration_source = self::detect_integration_source();
+				self::trigger_frontend_notification( $type, $integration_source, $email );
+			} catch ( Exception $e ) {
+				// Don't let notification failures affect event sending
+			}
+
 			return true;
 		}
 
@@ -203,218 +187,42 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 		 */
 		public static function init() {
 			add_action( 'init', array( __CLASS__, 'load_events_controllers' ) );
-
-			$interval = self::get_bento_option( 'bento_events_recurrence' );
-			// Use default 3-minute interval if not set
-			if ( empty( $interval ) ) {
-				$interval = 3;
-			}
-			
-			// add cron job to send events to Bento.
-			add_filter( 'cron_schedules', array( __CLASS__, 'add_events_cron_interval' ) ); // phpcs:ignore WordPress.WP.CronInterval
 			add_action( 'bento_send_events_hook', array( __CLASS__, 'bento_send_events_hook' ) );
 
-			if ( ! wp_next_scheduled( 'bento_send_events_hook' ) ) {
-				wp_schedule_event( time(), 'bento_send_events_interval', 'bento_send_events_hook' );
-			}
+			self::disable_legacy_event_queue_cron();
 		}
 
 		/**
 		 * Unschedule the Bento events cron job. Used when the plugin is deactivated.
 		 */
 		public static function remove_cron_jobs() {
-			$send_events_timestamp = wp_next_scheduled( 'bento_send_events_hook' );
-			wp_unschedule_event( $send_events_timestamp, 'bento_send_events_hook' );
+			self::disable_legacy_event_queue_cron();
 		}
 
 		/**
-		 * Check if bento is sending events.
+		 * Disable the legacy cron job and clean up queued data.
 		 */
-		private static function is_sending_events() {
-			return true === get_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY );
-		}
+		private static function disable_legacy_event_queue_cron() {
+			wp_clear_scheduled_hook( 'bento_send_events_hook' );
 
-		/**
-		 * Deduplicate events based on email, type, and relevant detail keys
-		 *
-		 * @param array $events_queue The events queue to deduplicate.
-		 * @return array Deduplicated events queue.
-		 */
-		private static function deduplicate_events( $events_queue ) {
-			if ( empty( $events_queue ) || ! is_array( $events_queue ) ) {
-				return $events_queue;
-			}
-
-			$unique_events = array();
-			$seen_keys = array();
-			$duplicate_count = 0;
-
-			foreach ( $events_queue as $event ) {
-				$dedup_key = self::generate_dedup_key( $event );
-				
-				if ( ! in_array( $dedup_key, $seen_keys, true ) ) {
-					$unique_events[] = $event;
-					$seen_keys[] = $dedup_key;
-				} else {
-					$duplicate_count++;
-				}
-			}
-
-			if ( $duplicate_count > 0 ) {
-				Bento_Logger::info( "Removed {$duplicate_count} duplicate events from queue" );
-			}
-
-			return $unique_events;
-		}
-
-		/**
-		 * Generate a deduplication key for an event
-		 *
-		 * @param array $event The event data.
-		 * @return string The deduplication key.
-		 */
-		private static function generate_dedup_key( $event ) {
-			$key_parts = array(
-				$event['email'] ?? '',
-				$event['type'] ?? '',
-			);
-
-			// Add relevant detail keys for specific event types
-			if ( isset( $event['details'] ) && is_array( $event['details'] ) ) {
-				$details = $event['details'];
-				
-				// For course-related events, include course_id
-				if ( isset( $details['course_id'] ) ) {
-					$key_parts[] = 'course_id:' . $details['course_id'];
-				}
-				
-				// For product-related events, include product_id
-				if ( isset( $details['product_id'] ) ) {
-					$key_parts[] = 'product_id:' . $details['product_id'];
-				}
-				
-				// For order-related events, include order_id
-				if ( isset( $details['order_id'] ) ) {
-					$key_parts[] = 'order_id:' . $details['order_id'];
-				}
-				
-				// For subscription-related events, include subscription_id
-				if ( isset( $details['subscription_id'] ) ) {
-					$key_parts[] = 'subscription_id:' . $details['subscription_id'];
-				}
-			}
-
-			return md5( implode( '|', $key_parts ) );
-		}
-
-		/**
-		 * Send events in the queue to Bento.
-		 */
-		public static function bento_send_events_hook() {
-			if ( self::is_sending_events() ) {
-				Bento_Logger::info( 'Events processing already in progress - skipping' );
-				return; // Already sending events.
-			}
-
-			$events_queue = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$original_count = count( $events_queue );
-			
-			if ( empty( $events_queue ) ) {
-				Bento_Logger::info( 'No events in queue to process' );
+			if ( get_option( self::EVENTS_QUEUE_CLEANUP_FLAG ) ) {
 				return;
 			}
-			
-			// Deduplicate events before processing
-			$events_queue = self::deduplicate_events( $events_queue );
-			// Clear the main queue before processing to avoid duplicate processing
-			update_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$queue_count = count( $events_queue );
-			
-			Bento_Logger::info( "Starting batch event processing - {$original_count} events in queue, {$queue_count} after deduplication" );
-			Bento_Logger::info( "Queue cleared - verifying empty: " . count( get_option( self::EVENTS_QUEUE_OPTION_KEY, array() ) ) . " events remaining" );
 
-			// set the transient to true so we know we're sending events.
-			set_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY, true, HOUR_IN_SECONDS * 6 );
-
-			$new_events_queue = array();
-			$sent_count = 0;
-			$failed_count = 0;
-			
-			foreach ( $events_queue as $event ) {
-				$event_status = self::send_event( $event['user_id'], $event['type'], $event['email'], $event['details'] );
-				
-				if ( $event_status ) {
-					$sent_count++;
-					Bento_Logger::info( "Event sent successfully - removing from queue: {$event['type']} for " . self::sanitize_email_for_logging( $event['email'] ) );
-				} else {
-					$failed_count++;
-					// event was not sent successfully.
-					$new_events_queue[] = $event;
-					Bento_Logger::info( "Event failed - keeping in queue: {$event['type']} for " . self::sanitize_email_for_logging( $event['email'] ) );
-				}
-			}
-
-			// merge temporary queues with the permanent queue.
-			$temp_queue_keys = get_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-			if ( ! empty( $temp_queue_keys ) && is_array( $temp_queue_keys ) ) {
-				$temp_events_merged = 0;
-				foreach ( $temp_queue_keys as $temp_key ) {
-					$temp_queue = get_transient( $temp_key );
-					if ( ! empty( $temp_queue ) && is_array( $temp_queue ) ) {
-						$new_events_queue = array_merge( $new_events_queue, $temp_queue );
-						$temp_events_merged += count( $temp_queue );
-					}
-					delete_transient( $temp_key );
-				}
-				delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
-				Bento_Logger::info( "Merged {$temp_events_merged} events from " . count( $temp_queue_keys ) . " temporary queues" );
-			}
-			
-			// Also check for the old-style temporary queue for backward compatibility
-			$temporary_queue = get_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			if ( ! empty( $temporary_queue ) && is_array( $temporary_queue ) ) {
-				$temp_count = count( $temporary_queue );
-				Bento_Logger::info( "Merging {$temp_count} events from legacy temporary queue" );
-				$new_events_queue = array_merge( $new_events_queue, $temporary_queue );
-			}
-
-			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
-			
-			// TODO: We need to figure out a better way to do queues.
-			// update_option( self::EVENTS_QUEUE_OPTION_KEY, $new_events_queue );
-			
-			// Verify the queue was updated correctly
-			$final_queue_check = get_option( self::EVENTS_QUEUE_OPTION_KEY, array() );
-			$final_queue_count = count( $final_queue_check );
-
-			// finish sending events.
-			delete_transient( self::IS_SENDING_EVENTS_TRANSIENT_KEY );
-			
-			$remaining_count = count( $new_events_queue );
-			Bento_Logger::info( "Batch processing complete - Sent: {$sent_count}, Failed: {$failed_count}, Remaining in queue: {$remaining_count}" );
-			Bento_Logger::info( "Final queue verification - Expected: {$remaining_count}, Actual in DB: {$final_queue_count}" );
+			Bento_Logger::info( 'Cleaning up legacy Bento events queue artifacts.' );
+			self::cleanup_legacy_event_queue();
+			update_option( self::EVENTS_QUEUE_CLEANUP_FLAG, time() );
 		}
 
 		/**
-		 * Add bento cron interval.
-		 *
-		 * @param array $schedule The schedule.
-		 * @return array
+		 * Remove legacy queue options and transients.
 		 */
-		public static function add_events_cron_interval( $schedule ) {
-			$interval = self::get_bento_option( 'bento_events_recurrence' );
-			// Use default 3-minute interval if not set
-			if ( empty( $interval ) ) {
-				$interval = 3;
-			}
-
-			$schedule['bento_send_events_interval'] = array(
-				'interval' => MINUTE_IN_SECONDS * $interval,
-				'display'  => __( 'Bento Send Events Interval', 'bentonow' ),
-			);
-
-			return $schedule;
+		private static function cleanup_legacy_event_queue() {
+			delete_option( self::EVENTS_QUEUE_OPTION_KEY );
+			delete_transient( self::EVENTS_QUEUE_OPTION_KEY );
+			delete_transient( self::EVENTS_QUEUE_OPTION_KEY . '_temp_keys' );
 		}
+
 
 		/**
 		 * Load events controllers
@@ -498,6 +306,64 @@ if ( ! class_exists( 'Bento_Events_Controller', false ) ) {
 			}
 			
 			return '[keys: ' . implode( ', ', $safe_keys ) . ']';
+		}
+
+		/**
+		 * Detect integration source from backtrace
+		 *
+		 * @return string The integration source.
+		 */
+		private static function detect_integration_source() {
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 10 );
+			
+			foreach ( $backtrace as $trace ) {
+				$class = $trace['class'] ?? '';
+				if ( strpos( $class, 'WooCommerce' ) !== false ) {
+					return 'WooCommerce';
+				}
+				if ( strpos( $class, 'LearnDash' ) !== false ) {
+					return 'LearnDash';
+				}
+				if ( strpos( $class, 'SureCart' ) !== false ) {
+					return 'SureCart';
+				}
+				if ( strpos( $class, 'EDD' ) !== false ) {
+					return 'EDD';
+				}
+				if ( strpos( $class, 'WPForms' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Action_After_Submit' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Bento_Bricks_Form_Handler' ) !== false ) {
+					return 'Forms';
+				}
+				if ( strpos( $class, 'Form' ) !== false ) {
+					return 'Forms';
+				}
+			}
+			return 'Unknown';
+		}
+
+		/**
+		 * Trigger frontend notification for real-time event display
+		 *
+		 * @param string $event_type    The event type.
+		 * @param string $integration   The integration source.
+		 * @param string $email         The email address.
+		 */
+		private static function trigger_frontend_notification( $event_type, $integration, $email ) {
+			// Store in WordPress transient for immediate pickup by frontend
+			$event_data = array(
+				'id'          => uniqid(),
+				'type'        => $event_type,
+				'integration' => $integration,
+				'email'       => self::sanitize_email_for_logging( $email ),
+				'timestamp'   => time(),
+			);
+			
+			set_transient( 'bento_latest_event', $event_data, 60 ); // 1 minute expiry
 		}
 		
 

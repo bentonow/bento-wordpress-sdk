@@ -117,8 +117,10 @@ class Bento_Bricks_Form_Handler {
         unset($custom_fields['formId']);
         unset($custom_fields['postId']);
 
-        $email = $custom_fields['email'];
-        unset($custom_fields['email']);
+        $email = $custom_fields['email'] ?? '';
+        if (isset($custom_fields['email'])) {
+            unset($custom_fields['email']);
+        }
 
         if (isset($custom_fields['event']) && !empty($custom_fields['event'])) {
             $event_name = $custom_fields['event'];
@@ -132,19 +134,24 @@ class Bento_Bricks_Form_Handler {
             Bento_Logger::log('[Bricks] Prepared event: ' . $event_name . ', Email: ' . $sanitized_email . ', Custom Fields: ' . $sanitized_custom_fields);
         }
 
-        if (!empty($email)) {
-            Bento_Events_Controller::trigger_event(
-                null,
-                $event_name,
-                $email, 
-                $fields,
-                $custom_fields
-            );
-            // Debug log: event triggered (sanitized)
+        if (empty($email)) {
             if (class_exists('Bento_Logger')) {
-                $sanitized_email = self::sanitize_email_for_logging($email);
-                Bento_Logger::log('[Bricks] Event triggered: ' . $event_name . ' for ' . $sanitized_email);
+                Bento_Logger::error('[Bricks] Missing primary email field; event will not be sent.');
             }
+            return;
+        }
+
+        Bento_Events_Controller::trigger_event(
+            null,
+            $event_name,
+            $email, 
+            $fields,
+            $custom_fields
+        );
+        // Debug log: event triggered (sanitized)
+        if (class_exists('Bento_Logger')) {
+            $sanitized_email = self::sanitize_email_for_logging($email);
+            Bento_Logger::log('[Bricks] Event triggered: ' . $event_name . ' for ' . $sanitized_email);
         }
     }
 }
