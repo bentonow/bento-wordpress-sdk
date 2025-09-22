@@ -97,6 +97,7 @@ test('check_size trims log history beyond limit', function () {
             'type' => 'mail_received',
             'subject' => 'Subject ' . $i,
             'timestamp' => time(),
+            'payload' => str_repeat('A', 2048),
         ]);
     }
 
