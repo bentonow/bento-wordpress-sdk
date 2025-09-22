@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use Bento_Events_Controller;
 use EDD_Bento_Events;
 
-if (!class_exists(__NAMESPACE__ . '\\EddTestOrder')) {
+if (!class_exists(__NAMESPACE__ . '\\EddTestOrder', false)) {
     class EddTestOrder {
         public $id;
         public $email;
@@ -36,7 +36,7 @@ if (!class_exists(__NAMESPACE__ . '\\EddTestOrder')) {
     }
 }
 
-if (!class_exists(__NAMESPACE__ . '\\EddTestOrderItem')) {
+if (!class_exists(__NAMESPACE__ . '\\EddTestOrderItem', false)) {
     class EddTestOrderItem {
         public $product_id;
         public $product_name;
@@ -52,15 +52,15 @@ if (!class_exists(__NAMESPACE__ . '\\EddTestOrderItem')) {
     }
 }
 
-if (!class_exists('EDD\\Orders\\Order')) {
+if (!class_exists('EDD\\Orders\\Order', false)) {
     class_alias(EddTestOrder::class, 'EDD\\Orders\\Order');
 }
 
-if (!class_exists('EDD\\Orders\\Order_Item')) {
+if (!class_exists('EDD\\Orders\\Order_Item', false)) {
     class_alias(EddTestOrderItem::class, 'EDD\\Orders\\Order_Item');
 }
 
-if (!class_exists('EDD_Download')) {
+if (!class_exists('EDD_Download', false)) {
     class EDD_Download {
         private $name;
         private $price;
