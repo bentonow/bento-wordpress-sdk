@@ -7,7 +7,7 @@ use Bento_Events_Controller;
 
 require_once __DIR__ . '/WooCommerceEventsTest.php';
 
-if (!class_exists('Tests\\Unit\\Test_WC_Subscription')) {
+if (!class_exists('Tests\\Unit\\Test_WC_Subscription', false)) {
     class Test_WC_Subscription extends Test_WC_Order {
         private $status;
         private $subscription_id;

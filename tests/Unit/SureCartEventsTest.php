@@ -5,14 +5,14 @@ namespace Tests\Unit;
 use SureCart_Bento_Events;
 use Bento_Events_Controller;
 
-if (!class_exists('Tests\\Unit\\Test_SureCart_Customer')) {
+if (!class_exists('Tests\\Unit\\Test_SureCart_Customer', false)) {
     class Test_SureCart_Customer {
         public $id;
         public function __construct($id) { $this->id = $id; }
     }
 }
 
-if (!class_exists('Tests\\Unit\\Test_SureCart_Checkout')) {
+if (!class_exists('Tests\\Unit\\Test_SureCart_Checkout', false)) {
     class Test_SureCart_Checkout {
         public $id = 'chk_123';
         public $total_amount = 9900;

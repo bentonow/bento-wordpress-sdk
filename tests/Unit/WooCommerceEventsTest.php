@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use Bento_Events_Controller;
 use WooCommerce_Bento_Events;
 
-if (!class_exists('Tests\\Unit\\Test_WC_Product')) {
+if (!class_exists('Tests\\Unit\\Test_WC_Product', false)) {
     class Test_WC_Product {
         private $id;
         private $name;
@@ -33,7 +33,7 @@ if (!class_exists('Tests\\Unit\\Test_WC_Product')) {
     }
 }
 
-if (!class_exists('Tests\\Unit\\Test_WC_Order_Item')) {
+if (!class_exists('Tests\\Unit\\Test_WC_Order_Item', false)) {
     class Test_WC_Order_Item {
         private $product;
         private $quantity;
@@ -60,7 +60,7 @@ if (!class_exists('Tests\\Unit\\Test_WC_Order_Item')) {
     }
 }
 
-if (!class_exists('Tests\\Unit\\Test_WC_Order')) {
+if (!class_exists('Tests\\Unit\\Test_WC_Order', false)) {
     class Test_WC_Order {
         private $id;
         private $customer_id;
