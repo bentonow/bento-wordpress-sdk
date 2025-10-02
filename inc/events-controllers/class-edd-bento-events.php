@@ -23,6 +23,11 @@ if ( class_exists( 'Easy_Digital_Downloads' ) && ! class_exists( 'EDD_Bento_Even
                 'edd_complete_purchase',
                 function( $payment_id ) {
                     $order    = edd_get_order( $payment_id );
+
+                    if ( ! $order || empty( $order->email ) || ! is_email( $order->email ) ) {
+                        return;
+                    }
+
                     $details  = self::prepare_download_event_details( $order );
 
                     if ( $order->total > 0 ) {
@@ -47,6 +52,10 @@ if ( class_exists( 'Easy_Digital_Downloads' ) && ! class_exists( 'EDD_Bento_Even
                 'edd_process_verified_download',
                 function( $download_id, $email ) {
                     $download = edd_get_download( $download_id );
+
+                     if ( ! $download || empty( $email ) || ! is_email( $email ) ) {
+                         return;
+                     }
 
                     $details = array(
                         'download' => array(
@@ -73,6 +82,11 @@ if ( class_exists( 'Easy_Digital_Downloads' ) && ! class_exists( 'EDD_Bento_Even
                 'edd_refund_order',
                 function( $order_id, $refund_id, $all_refunded ) {
                     $refund  = edd_get_order( $refund_id );
+
+                    if ( ! $refund || empty( $refund->email ) || ! is_email( $refund->email ) ) {
+                        return;
+                    }
+
                     $details = self::prepare_download_event_details( $refund );
 
                     if ( $refund->total < 0 ) {

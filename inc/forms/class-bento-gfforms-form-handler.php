@@ -43,6 +43,10 @@ if ( class_exists( 'GFForms' ) && ! class_exists( 'Bento_GFForms_Form_Handler', 
                         }
                     }
 
+                    if ( empty( $user_email ) || ! is_email( $user_email ) ) {
+                        return;
+                    }
+
                     self::send_event(
                         null,
                         $event_name,

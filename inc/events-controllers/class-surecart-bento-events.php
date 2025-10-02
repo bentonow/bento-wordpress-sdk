@@ -58,6 +58,10 @@ if ( class_exists( 'SureCart' ) && ! class_exists( 'SureCart_Bento_Events', fals
             // Merge additional fields with custom fields
             $custom_fields = array_merge($custom_fields, $additional_fields);
 
+            if ( empty( $checkout->email ) || ! is_email( $checkout->email ) ) {
+                return;
+            }
+
             self::send_event(
                 null,
                 '$CheckoutConfirmed',
