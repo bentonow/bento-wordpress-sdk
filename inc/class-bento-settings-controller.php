@@ -23,8 +23,14 @@ class Bento_Settings_Controller {
             wp_send_json_error(['message' => 'Permission denied']);
         }
 
-        $key = sanitize_text_field($_POST['key']);
-        $value = sanitize_text_field($_POST['value']);
+        $key = isset($_POST['key']) ? sanitize_text_field(wp_unslash($_POST['key'])) : '';
+
+        if ($key === '') {
+            wp_send_json_error(['message' => 'Invalid setting key']);
+        }
+
+        $raw_value = $_POST['value'] ?? '';
+        $value = $this->prepare_setting_value($key, $raw_value);
 
         $result = $this->config->update_option($key, $value);
         wp_send_json(['success' => $result]);
@@ -283,5 +289,40 @@ class Bento_Settings_Controller {
         } catch (Exception $e) {
             wp_send_json_error(['message' => 'Test failed: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Normalize incoming setting values based on the key that is being updated.
+     * Ensures JSON payloads are preserved while other values remain sanitized.
+     */
+    private function prepare_setting_value(string $key, $raw_value) {
+        if ($key === 'bento_connection_status') {
+            $value = is_string($raw_value) ? wp_unslash($raw_value) : '';
+            $decoded_status = json_decode($value, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded_status)) {
+                wp_send_json_error(['message' => 'Invalid connection status payload']);
+            }
+
+            return $decoded_status;
+        }
+
+        if (is_array($raw_value)) {
+            $unslashed = wp_unslash($raw_value);
+
+            foreach ($unslashed as $index => $item) {
+                $unslashed[$index] = is_scalar($item) ? sanitize_text_field((string) $item) : '';
+            }
+
+            return $unslashed;
+        }
+
+        $value = wp_unslash($raw_value);
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        return sanitize_text_field((string) $value);
     }
 }
