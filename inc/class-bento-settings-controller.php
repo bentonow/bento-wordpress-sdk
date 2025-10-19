@@ -264,22 +264,36 @@ class Bento_Settings_Controller {
     }
     
     public function handle_test_bento_event(): void {
-        check_ajax_referer('test_bento_event', '_wpnonce');
-        
+        check_ajax_referer('bento_settings', '_wpnonce');
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Permission denied']);
+            return;
         }
-        
+
+        if (!class_exists('Bento_Events_Controller')) {
+            wp_send_json_error(['message' => 'Event dispatcher is unavailable.']);
+            return;
+        }
+
+        $user_id = get_current_user_id();
+        $admin_email = get_option('admin_email');
+
+        if (empty($admin_email) || !is_email($admin_email)) {
+            wp_send_json_error(['message' => 'Admin email is not configured.']);
+            return;
+        }
+
         try {
             // Test event trigger
             $result = Bento_Events_Controller::trigger_event(
-                1, // user_id
+                $user_id,
                 'test_wpforms_event',
-                'test@example.com',
+                $admin_email,
                 ['test' => 'data'],
                 ['custom_field' => 'test_value']
             );
-            
+        
             wp_send_json_success([
                 'message' => 'Test event triggered',
                 'result' => $result,

@@ -14,11 +14,7 @@ function fetch_gform_after_submission_callback(): array
         expect()->fail('Expected $__wp_test_state["actions"] to be an array before asserting hooks.');
     }
 
-    if (
-        !array_key_exists('gform_after_submission', $actions) ||
-        !is_array($actions['gform_after_submission']) ||
-        count($actions['gform_after_submission']) === 0
-    ) {
+    if (!array_key_exists('gform_after_submission', $actions) || !is_array($actions['gform_after_submission'])) {
         $available = implode(', ', array_keys($actions));
         expect()->fail(sprintf(
             'Gravity Forms handler did not register the gform_after_submission hook. Available hooks: [%s]',
@@ -26,7 +22,13 @@ function fetch_gform_after_submission_callback(): array
         ));
     }
 
-    $hook = $actions['gform_after_submission'][0];
+    $submission_hooks = $actions['gform_after_submission'];
+
+    if (count($submission_hooks) === 0 || !isset($submission_hooks[0])) {
+        expect()->fail('Gravity Forms handler registered gform_after_submission but no callbacks were queued.');
+    }
+
+    $hook = $submission_hooks[0];
 
     if (!isset($hook['callback']) || !is_callable($hook['callback'])) {
         expect()->fail('Registered gform_after_submission hook is missing a callable callback.');
