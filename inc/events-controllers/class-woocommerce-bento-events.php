@@ -87,9 +87,19 @@ if ( class_exists( 'WooCommerce' ) && ! class_exists( 'WooCommerce_Bento_Events'
                         sprintf( 'wc_refund_%d', $refund->get_id() )
                     );
 
+                    $refund_total = $refund->get_total();
+
+                    # returns an integer
+                    $decimals = wc_get_price_decimals();
+
+                    # if decimals is greater than 0, we need to multiply the total by 10^decimals
+                    if ( $decimals > 0 ) {
+                        $refund_total = round( $refund_total * pow( 10, $decimals ) );
+                    }
+
                     $details['value'] = array(
                         'currency' => $refund->get_currency(),
-                        'amount'   => $refund->get_total(),
+                        'amount'   => $refund_total,
                     );
 
                     self::send_event(

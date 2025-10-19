@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 class Bento_Settings_Controller {
     private $config;
 
-    public function __construct(Configuration_Interface $config = null) {
+    public function __construct($config = null) {
         $this->config = $config ?? new WordPress_Configuration();
         add_action('wp_ajax_bento_update_settings', [$this, 'handle_update_settings']);
         add_action('wp_ajax_bento_validate_connection', [$this, 'handle_validate_connection']);

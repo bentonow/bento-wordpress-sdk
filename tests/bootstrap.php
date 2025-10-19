@@ -620,7 +620,9 @@ if (!function_exists('delete_user_meta')) {
 
 if (!function_exists('get_current_user_id')) {
     function get_current_user_id() {
-        return 1;
+        global $__wp_test_state;
+        $user = $__wp_test_state['current_user'] ?? (object) ['ID' => 0];
+        return (int)$user->ID;
     }
 }
 
