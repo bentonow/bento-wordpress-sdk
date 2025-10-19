@@ -83,13 +83,17 @@ export function EventTrackingCard({ settings, onUpdate }) {
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: Failed to clean event queue`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.data?.message || errorMessage;
-        } catch {
-          const errorText = await response.text();
-          if (errorText) errorMessage = errorText;
+        const rawBody = await response.text();
+
+        if (rawBody) {
+          try {
+            const errorData = JSON.parse(rawBody);
+            errorMessage = errorData.data?.message || errorData.message || errorMessage;
+          } catch {
+            errorMessage = rawBody;
+          }
         }
+
         toast({
           title: "Error",
           description: errorMessage,

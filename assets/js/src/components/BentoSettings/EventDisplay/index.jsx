@@ -16,9 +16,12 @@ export function EventDisplay() {
   };
 
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'just now';
+
     const now = Date.now() / 1000; // Convert to seconds
     const diff = now - timestamp;
-    
+
+    if (diff <= 0) return 'just now';
     if (diff < 60) return `${Math.floor(diff)}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
