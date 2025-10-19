@@ -153,6 +153,28 @@ test('handle_wp_mail with attachments returns control to WordPress', function ()
     expect($result)->toBeNull();
 });
 
+test('handle_wp_mail with attachments logs every recipient', function () {
+    $this->mailLogger->shouldReceive('log_mail')
+        ->once()
+        ->withArgs(fn($data) => $data['type'] === 'mail_received'
+            && $data['to'] === 'one@example.com, two@example.com');
+
+    $this->mailLogger->shouldReceive('log_mail')
+        ->once()
+        ->withArgs(fn($data) => $data['type'] === 'wordpress_fallback'
+            && $data['to'] === 'one@example.com, two@example.com');
+
+    $result = $this->handler->handle_wp_mail(null, [
+        'to' => ['one@example.com', 'two@example.com'],
+        'subject' => 'Docs',
+        'message' => 'See attached',
+        'headers' => [],
+        'attachments' => ['file.pdf'],
+    ]);
+
+    expect($result)->toBeNull();
+});
+
 test('blocks duplicate emails', function () {
     $hash = md5('test@example.com' . 'Test Subject' . 'Test Message');
 
