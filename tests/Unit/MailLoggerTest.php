@@ -11,7 +11,23 @@ require_once __DIR__ . '/../../inc/class-bento-mail-logger.php';
 function create_temp_log_path(): string
 {
     $dir = sys_get_temp_dir() . '/bento-mail-logger-' . uniqid();
-    mkdir($dir, 0755, true);
+    $created = @mkdir($dir, 0755, true);
+
+    if ($created === false && !is_dir($dir)) {
+        $error = error_get_last() ?: [];
+        $message = $error['message'] ?? 'unknown error';
+        $type = $error['type'] ?? 'unknown type';
+
+        throw new \RuntimeException(
+            sprintf(
+                'Failed to create mail logger temp directory at "%s": %s (type %s)',
+                $dir,
+                $message,
+                $type
+            )
+        );
+    }
+
     return $dir . '/mail-logs.json';
 }
 

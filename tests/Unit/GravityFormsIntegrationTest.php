@@ -5,6 +5,36 @@ namespace Tests\Unit;
 use Bento_GFForms_Form_Handler;
 use Bento_Events_Controller;
 
+function fetch_gform_after_submission_callback(): array
+{
+    global $__wp_test_state;
+    $actions = $__wp_test_state['actions'] ?? null;
+
+    if (!is_array($actions)) {
+        expect()->fail('Expected $__wp_test_state["actions"] to be an array before asserting hooks.');
+    }
+
+    if (
+        !array_key_exists('gform_after_submission', $actions) ||
+        !is_array($actions['gform_after_submission']) ||
+        count($actions['gform_after_submission']) === 0
+    ) {
+        $available = implode(', ', array_keys($actions));
+        expect()->fail(sprintf(
+            'Gravity Forms handler did not register the gform_after_submission hook. Available hooks: [%s]',
+            $available
+        ));
+    }
+
+    $hook = $actions['gform_after_submission'][0];
+
+    if (!isset($hook['callback']) || !is_callable($hook['callback'])) {
+        expect()->fail('Registered gform_after_submission hook is missing a callable callback.');
+    }
+
+    return [$hook, $hook['callback']];
+}
+
 beforeEach(function () {
     wp_test_reset_state();
 
@@ -31,8 +61,7 @@ test('Gravity Forms handler converts submission to Bento event', function () {
 
     Bento_GFForms_Form_Handler::init();
 
-    $hook = $__wp_test_state['actions']['gform_after_submission'][0];
-    $callback = $hook['callback'];
+    [, $callback] = fetch_gform_after_submission_callback();
 
     $form = [
         'id' => 23,
@@ -50,8 +79,13 @@ test('Gravity Forms handler converts submission to Bento event', function () {
 
     $callback($entry, $form);
 
-    expect($__wp_test_state['remote_posts'])->toHaveCount(1);
-    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+    $remote_posts = $__wp_test_state['remote_posts'] ?? null;
+
+    if (!is_array($remote_posts) || count($remote_posts) === 0) {
+        expect()->fail('Gravity Forms handler did not dispatch any remote posts for a valid submission.');
+    }
+
+    $payload = json_decode($remote_posts[0]['args']['body'], true);
     $event = $payload['events'][0];
 
     expect($event['type'])->toBe('$GFormsSubmit:Newsletter Signup-23');
@@ -64,8 +98,7 @@ test('Gravity Forms handler falls back to ID when title missing', function () {
     $__wp_test_state['remote_posts'] = [];
 
     Bento_GFForms_Form_Handler::init();
-    $hook = $__wp_test_state['actions']['gform_after_submission'][0];
-    $callback = $hook['callback'];
+    [, $callback] = fetch_gform_after_submission_callback();
 
     $form = [
         'id' => 99,
@@ -81,7 +114,13 @@ test('Gravity Forms handler falls back to ID when title missing', function () {
 
     $callback($entry, $form);
 
-    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+    $remote_posts = $__wp_test_state['remote_posts'] ?? null;
+
+    if (!is_array($remote_posts) || count($remote_posts) === 0) {
+        expect()->fail('Gravity Forms handler failed to dispatch a remote post when form title was empty.');
+    }
+
+    $payload = json_decode($remote_posts[0]['args']['body'], true);
     $event = $payload['events'][0];
 
     expect($event['type'])->toBe('$GFormsSubmit:99');
@@ -92,8 +131,7 @@ test('Gravity Forms handler skips dispatch when email value missing', function (
     $__wp_test_state['remote_posts'] = [];
 
     Bento_GFForms_Form_Handler::init();
-    $hook = $__wp_test_state['actions']['gform_after_submission'][0];
-    $callback = $hook['callback'];
+    [, $callback] = fetch_gform_after_submission_callback();
 
     $form = [
         'id' => 24,

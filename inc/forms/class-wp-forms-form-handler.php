@@ -43,13 +43,20 @@ class WPForms_Bento_Integration {
             Bento_Logger::info('[WPForms] Triggering event: ' . $event_name . ' for email: ' . $sanitized_email . ' with fields: ' . $sanitized_fields);
         }
 
-        $result = Bento_Events_Controller::trigger_event(
-            get_current_user_id(),
-            $event_name,
-            $email,
-            $event_details,
-            $custom_fields
-        );
+        if (!class_exists('Bento_Events_Controller')) {
+            if (class_exists('Bento_Logger')) {
+                Bento_Logger::warning('[WPForms] Bento_Events_Controller class not found - event not triggered');
+            }
+            $result = false;
+        } else {
+            $result = Bento_Events_Controller::trigger_event(
+                get_current_user_id(),
+                $event_name,
+                $email,
+                $event_details,
+                $custom_fields
+            );
+        }
 
         if (class_exists('Bento_Logger')) {
             $sanitized_email = $this->sanitize_email_for_logging($email);
