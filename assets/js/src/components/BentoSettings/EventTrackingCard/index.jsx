@@ -26,6 +26,23 @@ export function EventTrackingCard({ settings, onUpdate }) {
         })
       });
 
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to clear debug log`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.data?.message || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          if (errorText) errorMessage = errorText;
+        }
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         toast({
@@ -43,7 +60,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to clear debug log. Please check file permissions",
+        description: error.message || "Failed to clear debug log. Please check file permissions",
         variant: "destructive"
       });
     } finally {
@@ -64,6 +81,27 @@ export function EventTrackingCard({ settings, onUpdate }) {
         })
       });
 
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to clean event queue`;
+        const rawBody = await response.text();
+
+        if (rawBody) {
+          try {
+            const errorData = JSON.parse(rawBody);
+            errorMessage = errorData.data?.message || errorData.message || errorMessage;
+          } catch {
+            errorMessage = rawBody;
+          }
+        }
+
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         toast({
@@ -81,7 +119,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to clean event queue. Database operation failed",
+        description: error.message || "Failed to clean event queue. Database operation failed",
         variant: "destructive"
       });
     } finally {
@@ -101,6 +139,23 @@ export function EventTrackingCard({ settings, onUpdate }) {
         })
       });
 
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: Failed to send test event`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.data?.message || errorMessage;
+        } catch {
+          const errorText = await response.text();
+          if (errorText) errorMessage = errorText;
+        }
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -118,7 +173,7 @@ export function EventTrackingCard({ settings, onUpdate }) {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to send test event.',
+        description: error.message || 'Failed to send test event.',
         variant: 'destructive',
       });
     } finally {

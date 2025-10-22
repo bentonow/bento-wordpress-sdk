@@ -170,10 +170,16 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 						return; // essay is not graded or event already sent.
 					}
 					try {
+						$user_email = self::resolve_user_email( $essay_post->post_author, 'essay grading event' );
+
+						if ( ! $user_email ) {
+							return;
+						}
+
 						self::send_event(
 							$essay_post->post_author,
 							'learndash_essay_graded',
-							get_userdata( $essay_post->post_author )->user_email,
+							$user_email,
 							array(
 								'quiz_id'                   => $quiz_id,
 								'quiz_name'                 => get_the_title( $quiz_id ),
@@ -196,11 +202,18 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 				function( $assignment_id ) {
 					$assignment = get_post( $assignment_id );
 					$course_id  = get_post_meta( $assignment_id, 'course_id', true );
+
 					try {
+						$user_email = self::resolve_user_email( $assignment->post_author, 'assignment approval event' );
+
+						if ( ! $user_email ) {
+							return;
+						}
+
 						self::send_event(
 							$assignment->post_author,
 							'learndash_assignment_approved',
-							get_userdata( $assignment->post_author )->user_email,
+							$user_email,
 							array(
 								'assignment_id'   => $assignment_id,
 								'assignment_name' => $assignment->post_title,
@@ -222,10 +235,16 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 					if ( learndash_get_post_type_slug( 'assignment' ) === $post_type ) {
 						$course_id = get_post_meta( $commentdata['comment_post_ID'], 'course_id', true );
 						try {
+							$user_email = self::resolve_user_email( $commentdata['user_id'], 'assignment comment event' );
+
+							if ( ! $user_email ) {
+								return;
+							}
+
 							self::send_event(
 								$commentdata['user_id'],
 								'learndash_assignment_new_comment',
-								get_userdata( $commentdata['user_id'] )->user_email,
+								$user_email,
 								array(
 									'assignment_id'        => $commentdata['comment_post_ID'],
 									'assignment_name'      => get_the_title( $commentdata['comment_post_ID'] ),
@@ -251,44 +270,48 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 			add_action(
 				'learndash_update_course_access',
 				function( $user_id, $course_id, $course_access_list, $remove ) {
-					if ( ! $remove ) {
-						try {
-							// Check if enrollment event was already sent for this user-course combination
-							$enrollment_events_sent = get_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, true );
-							if ( ! is_array( $enrollment_events_sent ) ) {
-								$enrollment_events_sent = array();
-							}
+					if ( $remove ) {
+						return;
+					}
 
-							// Only send event if not already sent for this course (using isset for O(1) lookup)
-							if ( ! isset( $enrollment_events_sent[ $course_id ] ) ) {
-								$user_data = get_userdata( $user_id );
-								if ( ! $user_data ) {
-									throw new Exception( "User data not found for user ID: {$user_id}" );
-								}
+					try {
+						// Check if enrollment event was already sent for this user-course combination.
+						$enrollment_events_sent = get_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, true );
+						if ( ! is_array( $enrollment_events_sent ) ) {
+							$enrollment_events_sent = array();
+						}
 
-								self::send_event(
-									$user_id,
-									'learndash_user_enrolled_in_course',
-									$user_data->user_email,
-									array(
-										'course_id'   => $course_id,
-										'course_name' => get_the_title( $course_id ),
-									)
-								);
+						// Only send event if not already sent for this course.
+						if ( isset( $enrollment_events_sent[ $course_id ] ) ) {
+							return;
+						}
 
-								// Mark this course enrollment as sent (store course_id as key for fast lookup)
-								$enrollment_events_sent[ $course_id ] = time();
-								update_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, $enrollment_events_sent );
-							}
-						} catch ( Exception $e ) {
-							// Log the error but don't break the site
-							if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-								error_log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
-							}
-							// Optionally use Bento_Logger if available
-							if ( class_exists( 'Bento_Logger' ) ) {
-								Bento_Logger::log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
-							}
+						$user_email = self::resolve_user_email( $user_id, 'course enrollment event' );
+						if ( ! $user_email ) {
+							return;
+						}
+
+						self::send_event(
+							$user_id,
+							'learndash_user_enrolled_in_course',
+							$user_email,
+							array(
+								'course_id'   => $course_id,
+								'course_name' => get_the_title( $course_id ),
+							)
+						);
+
+						// Mark this course enrollment as sent (store course_id as key for fast lookup).
+						$enrollment_events_sent[ $course_id ] = time();
+						update_user_meta( $user_id, self::BENTO_COURSE_ENROLLMENT_SENT_META_KEY, $enrollment_events_sent );
+					} catch ( Exception $e ) {
+						// Log the error but don't break the site.
+						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+							error_log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
+						}
+
+						if ( class_exists( 'Bento_Logger' ) ) {
+							Bento_Logger::log( '[Bento LearnDash Events] Error processing course enrollment: ' . $e->getMessage() );
 						}
 					}
 				},
@@ -301,10 +324,16 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 				'ld_added_group_access',
 				function( $user_id, $group_id ) {
 					try {
+						$user_email = self::resolve_user_email( $user_id, 'group enrollment event' );
+
+						if ( ! $user_email ) {
+							return;
+						}
+
 						self::send_event(
 							$user_id,
 							'learndash_user_enrolled_in_group',
-							get_userdata( $user_id )->user_email,
+							$user_email,
 							array(
 								'group_id'   => $group_id,
 								'group_name' => get_the_title( $group_id ),
@@ -335,10 +364,16 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 					$post_type = get_post_type( $post_id );
 					if ( learndash_get_post_type_slug( 'course' ) === $post_type ) {
 						try {
+							$user_email = self::resolve_user_email( $user_id, 'course purchase event' );
+
+							if ( ! $user_email ) {
+								return;
+							}
+
 							self::send_event(
 								$user_id,
 								'learndash_user_purchased_course',
-								get_userdata( $user_id )->user_email,
+								$user_email,
 								array(
 									'course_id'   => $post_id,
 									'course_name' => get_the_title( $post_id ),
@@ -349,10 +384,16 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 						}
 					} elseif ( learndash_get_post_type_slug( 'group' ) === $post_type ) {
 						try {
+							$user_email = self::resolve_user_email( $user_id, 'group purchase event' );
+
+							if ( ! $user_email ) {
+								return;
+							}
+
 							self::send_event(
 								$user_id,
 								'learndash_user_purchased_group',
-								get_userdata( $user_id )->user_email,
+								$user_email,
 								array(
 									'group_id'   => $post_id,
 									'group_name' => get_the_title( $post_id ),
@@ -375,22 +416,43 @@ if ( defined( 'LEARNDASH_VERSION' ) && ! class_exists( 'LearnDash_Bento_Events',
 		 * @param string $user_email User email.
 		 * @param array  $event_details Event details.
 		 */
-		private function send_user_earned_new_certificate_event( $user_id, $user_email, $event_details ) {
-			try {
-				self::send_event(
-					$user_id,
-					'learndash_user_earned_new_certificate',
-					$user_email,
-					$event_details
-				);
-			} catch (Exception $e) {
-				error_log('Bento LearnDash: Failed to send certificate event - ' . $e->getMessage());
+			private function send_user_earned_new_certificate_event( $user_id, $user_email, $event_details ) {
+				try {
+					self::send_event(
+						$user_id,
+						'learndash_user_earned_new_certificate',
+						$user_email,
+						$event_details
+					);
+				} catch (Exception $e) {
+					error_log('Bento LearnDash: Failed to send certificate event - ' . $e->getMessage());
+				}
+			}
+
+			/**
+			 * Safely resolve a user's email address for an event context.
+			 */
+			protected static function resolve_user_email( $user_id, $context ) {
+				$user = get_userdata( $user_id );
+
+				if ( ! $user || empty( $user->user_email ) ) {
+					$message = sprintf(
+						'Bento LearnDash: Unable to resolve user email for %s (user ID: %s).',
+						$context,
+						$user_id
+					);
+
+					if ( class_exists( 'Bento_Logger' ) ) {
+						Bento_Logger::log( $message );
+					} else {
+						error_log( $message );
+					}
+
+					return null;
+				}
+
+				return $user->user_email;
 			}
 		}
-
-
-
-
+		new LearnDash_Bento_Events();
 	}
-	new LearnDash_Bento_Events();
-}

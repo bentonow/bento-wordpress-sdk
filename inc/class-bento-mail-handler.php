@@ -70,8 +70,10 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
     if (!empty($attachments)) {
       // Log the fallback using the same pathway as direct calls, then allow
       // WordPress core to continue handling the email.
+      $recipient_list = implode(', ', $to);
+
       $this->handle_mail(
-        $to[0],
+        $recipient_list,
         $atts['subject'] ?? '',
         $atts['message'] ?? '',
         [],
@@ -111,12 +113,20 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
     $headers = [],
     $attachments = []
   ): bool {
+    $recipients = $this->normalize_recipients($to);
+
+    if (empty($recipients)) {
+      $this->logger->error('No valid recipient provided to handle_mail');
+      return false;
+    }
+
+    $recipient_string = implode(', ', $recipients);
     $mail_id = uniqid('mail_', true);
 
     $this->mail_logger->log_mail([
       'id' => $mail_id,
       'type' => 'mail_received',
-      'to' => $to,
+      'to' => $recipient_string,
       'subject' => $subject,
       'success' => true,
     ]);
@@ -126,7 +136,7 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
         'id' => $mail_id,
         'type' => 'wordpress_fallback',
         'reason' => 'attachments',
-        'to' => $to,
+        'to' => $recipient_string,
         'subject' => $subject,
         'success' => false,
       ]);
@@ -136,12 +146,12 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
       return false;
     }
 
-    $hash = md5($to . $subject . $message);
+    $hash = md5($recipient_string . $subject . $message);
     if ($this->mail_logger->is_duplicate($hash)) {
       $this->mail_logger->log_mail([
         'id' => $mail_id,
         'type' => 'blocked_duplicate',
-        'to' => $to,
+        'to' => $recipient_string,
         'subject' => $subject,
         'hash' => $hash,
       ]);
@@ -158,7 +168,7 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
 
     $result = $this->send_via_bento([
       'id' => $mail_id,
-      'to' => $to,
+      'to' => $recipient_string,
       'subject' => $subject,
       'message' => $message,
       'headers' => $parsed_headers,
@@ -169,7 +179,7 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
     $this->mail_logger->log_mail([
       'id' => $mail_id,
       'type' => $result ? 'bento_sent' : 'bento_failed',
-      'to' => $to,
+      'to' => $recipient_string,
       'reply_to' => $reply_to,
       'subject' => $subject,
       'hash' => $hash,
@@ -244,5 +254,18 @@ class Bento_Mail_Handler implements Mail_Handler_Interface
   private function is_enabled(): bool
   {
     return $this->config->get_option('bento_enable_transactional') === '1';
+  }
+
+  private function normalize_recipients($recipients): array
+  {
+    if (is_string($recipients)) {
+      $recipients = explode(',', $recipients);
+    } elseif (!is_array($recipients)) {
+      $recipients = (array) $recipients;
+    }
+
+    $recipients = array_filter(array_map('trim', $recipients));
+
+    return array_values($recipients);
   }
 }

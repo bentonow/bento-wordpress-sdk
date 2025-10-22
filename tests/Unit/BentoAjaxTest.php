@@ -92,14 +92,17 @@ test('bento_get_cart_items sets customer session cookie when session missing', f
     $wc = \WC();
     $wc->session = new Session_Without_Cookie();
     $wc->cart = new \WC_Cart();
-    $wc->cart->set_items([[ 'data' => new Test_Product([
-        'name' => 'Any',
-        'permalink' => '#',
-        'price' => '1.00',
-        'regular_price' => '1.00',
-        'sale_price' => '1.00',
-        'sku' => 'ANY',
-    ]) ]]);
+    $wc->cart->set_items([[
+        'data' => new Test_Product([
+            'name' => 'Any',
+            'permalink' => '#',
+            'price' => '1.00',
+            'regular_price' => '1.00',
+            'sale_price' => '1.00',
+            'sku' => 'ANY',
+        ]),
+        'quantity' => 1,
+    ]]);
 
     ob_start();
 

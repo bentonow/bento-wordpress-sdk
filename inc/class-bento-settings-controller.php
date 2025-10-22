@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 class Bento_Settings_Controller {
     private $config;
 
-    public function __construct(Configuration_Interface $config = null) {
+    public function __construct($config = null) {
         $this->config = $config ?? new WordPress_Configuration();
         add_action('wp_ajax_bento_update_settings', [$this, 'handle_update_settings']);
         add_action('wp_ajax_bento_validate_connection', [$this, 'handle_validate_connection']);
@@ -23,8 +23,14 @@ class Bento_Settings_Controller {
             wp_send_json_error(['message' => 'Permission denied']);
         }
 
-        $key = sanitize_text_field($_POST['key']);
-        $value = sanitize_text_field($_POST['value']);
+        $key = isset($_POST['key']) ? sanitize_text_field(wp_unslash($_POST['key'])) : '';
+
+        if ($key === '') {
+            wp_send_json_error(['message' => 'Invalid setting key']);
+        }
+
+        $raw_value = $_POST['value'] ?? '';
+        $value = $this->prepare_setting_value($key, $raw_value);
 
         $result = $this->config->update_option($key, $value);
         wp_send_json(['success' => $result]);
@@ -258,22 +264,36 @@ class Bento_Settings_Controller {
     }
     
     public function handle_test_bento_event(): void {
-        check_ajax_referer('test_bento_event', '_wpnonce');
-        
+        check_ajax_referer('bento_settings', '_wpnonce');
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'Permission denied']);
+            return;
         }
-        
+
+        if (!class_exists('Bento_Events_Controller')) {
+            wp_send_json_error(['message' => 'Event dispatcher is unavailable.']);
+            return;
+        }
+
+        $user_id = get_current_user_id();
+        $admin_email = get_option('admin_email');
+
+        if (empty($admin_email) || !is_email($admin_email)) {
+            wp_send_json_error(['message' => 'Admin email is not configured.']);
+            return;
+        }
+
         try {
             // Test event trigger
             $result = Bento_Events_Controller::trigger_event(
-                1, // user_id
+                $user_id,
                 'test_wpforms_event',
-                'test@example.com',
+                $admin_email,
                 ['test' => 'data'],
                 ['custom_field' => 'test_value']
             );
-            
+        
             wp_send_json_success([
                 'message' => 'Test event triggered',
                 'result' => $result,
@@ -283,5 +303,40 @@ class Bento_Settings_Controller {
         } catch (Exception $e) {
             wp_send_json_error(['message' => 'Test failed: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Normalize incoming setting values based on the key that is being updated.
+     * Ensures JSON payloads are preserved while other values remain sanitized.
+     */
+    private function prepare_setting_value(string $key, $raw_value) {
+        if ($key === 'bento_connection_status') {
+            $value = is_string($raw_value) ? wp_unslash($raw_value) : '';
+            $decoded_status = json_decode($value, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded_status)) {
+                wp_send_json_error(['message' => 'Invalid connection status payload']);
+            }
+
+            return $decoded_status;
+        }
+
+        if (is_array($raw_value)) {
+            $unslashed = wp_unslash($raw_value);
+
+            foreach ($unslashed as $index => $item) {
+                $unslashed[$index] = is_scalar($item) ? sanitize_text_field((string) $item) : '';
+            }
+
+            return $unslashed;
+        }
+
+        $value = wp_unslash($raw_value);
+
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        return sanitize_text_field((string) $value);
     }
 }

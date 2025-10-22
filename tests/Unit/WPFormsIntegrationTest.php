@@ -58,9 +58,29 @@ test('WPForms integration triggers Bento event with sanitized fields', function 
     $integration->handle_form_submission($fields, [], $form_data, 1234);
 
     expect($__wp_test_state['remote_posts'])->toHaveCount(1);
-    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
-    $event = $payload['events'][0];
 
+    // Assert the request was made and body exists
+    expect($__wp_test_state['remote_posts'][0])->toHaveKey('args');
+    expect($__wp_test_state['remote_posts'][0]['args'])->toHaveKey('body');
+
+    // Decode and assert valid JSON array
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+    expect($payload)->toBeArray();
+
+    // Assert events key exists and is a non-empty array
+    expect($payload)->toHaveKey('events');
+    expect($payload['events'])->toBeArray();
+    expect($payload['events'])->not()->toBeEmpty();
+
+    // Extract first event and assert structure
+    $event = $payload['events'][0];
+    expect($event)->toBeArray();
+    expect($event)->toHaveKey('type');
+    expect($event)->toHaveKey('email');
+    expect($event)->toHaveKey('fields');
+    expect($event['fields'])->toHaveKey('company');
+
+    // Assert values
     expect($event['type'])->toBe('$wpforms.wpforms-lead');
     expect($event['email'])->toBe('lead@example.com');
     expect($event['fields']['company'])->toBe('ACME Inc.');

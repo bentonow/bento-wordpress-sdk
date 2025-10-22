@@ -185,7 +185,7 @@ test('WooCommerce order refund emits refund event with value', function () {
     $event = $payload['events'][0];
 
     expect($event['type'])->toBe('$OrderRefunded');
-    expect((float) $event['details']['value']['amount'])->toBe(-40.00);
+    expect($event['details']['value']['amount'])->toBe(-4000); // converted cents
 });
 
 test('WooCommerce order cancellation triggers cancellation event', function () {

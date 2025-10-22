@@ -148,6 +148,16 @@ if (!function_exists('wp_json_encode')) {
     }
 }
 
+if (!function_exists('wp_unslash')) {
+    function wp_unslash($value) {
+        if (is_array($value)) {
+            return array_map('wp_unslash', $value);
+        }
+
+        return is_string($value) ? stripslashes($value) : $value;
+    }
+}
+
 if (!function_exists('current_time')) {
     function current_time($format) {
         return date($format);
@@ -610,7 +620,9 @@ if (!function_exists('delete_user_meta')) {
 
 if (!function_exists('get_current_user_id')) {
     function get_current_user_id() {
-        return 1;
+        global $__wp_test_state;
+        $user = $__wp_test_state['current_user'] ?? (object) ['ID' => 0];
+        return (int)$user->ID;
     }
 }
 

@@ -97,6 +97,49 @@ test('handle_update_settings stores sanitized option value', function () {
     expect($__wp_test_state['json'][0]['success'])->toBeTrue();
 });
 
+test('handle_update_settings preserves connection status json payload', function () {
+    global $__wp_test_state;
+    $_POST['key'] = 'bento_connection_status';
+    $_POST['value'] = wp_json_encode([
+        'connected' => true,
+        'message' => 'Connected',
+        'code' => 200,
+        'timestamp' => 1234567890,
+    ]);
+
+    $config = new FakeConfiguration();
+    $controller = new Bento_Settings_Controller($config);
+
+    expect(function () use ($controller) {
+        $controller->handle_update_settings();
+    })->toThrow(\RuntimeException::class, 'wp_send_json');
+
+    expect($config->updatedOptions)->toHaveKey('bento_connection_status');
+    expect($config->updatedOptions['bento_connection_status'])->toBe([
+        'connected' => true,
+        'message' => 'Connected',
+        'code' => 200,
+        'timestamp' => 1234567890,
+    ]);
+    expect($__wp_test_state['json'][0]['success'])->toBeTrue();
+});
+
+test('handle_update_settings rejects invalid connection status json', function () {
+    global $__wp_test_state;
+    $_POST['key'] = 'bento_connection_status';
+    $_POST['value'] = '{invalid json}';
+
+    $config = new FakeConfiguration();
+    $controller = new Bento_Settings_Controller($config);
+
+    expect(function () use ($controller) {
+        $controller->handle_update_settings();
+    })->toThrow(\RuntimeException::class, 'wp_send_json_error');
+
+    expect($config->updatedOptions)->not->toHaveKey('bento_connection_status');
+    expect($__wp_test_state['json_error'][0]['message'])->toBe('Invalid connection status payload');
+});
+
 test('handle_validate_connection updates credentials and returns response', function () {
     global $__wp_test_state;
     $_POST['site_key'] = 'site-123';

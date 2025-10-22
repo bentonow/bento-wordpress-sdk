@@ -51,7 +51,7 @@ test('WooCommerce subscription activation triggers Bento event', function () {
     $item = new Test_WC_Order_Item($product, 1, 15.00, 1.50, 15.00, 0.00);
     $subscription = new Test_WC_Subscription(2002, 7, 15.00, 'USD', 'subscriber@example.com', [$item], 'active');
 
-    $__wp_test_state['wcs_subscriptions'][999] = $subscription;
+    $__wp_test_state['wcs_subscriptions'][2002] = $subscription;
 
     new WooCommerce_Subscriptions_Bento_Events();
 
