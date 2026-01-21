@@ -114,3 +114,130 @@ test('Bento email handler processes queue and clears sent items', function () {
     $queue = get_option('bento_email_queue', []);
     expect($queue)->toBe([]);
 });
+
+test('Bento email handler forwards reply-to headers', function () {
+    update_option('bento_settings', [
+        'bento_enable_transactional' => '1',
+        'bento_site_key' => 'site',
+        'bento_publishable_key' => 'pub',
+        'bento_secret_key' => 'sec',
+        'bento_enable_reply_to' => '1',
+    ]);
+
+    $handler = new Bento_Email_Handler();
+
+    $email = [
+        'to' => 'reply@example.com',
+        'subject' => 'Subject',
+        'message' => 'Body',
+        'headers' => ['Reply-To: reply@example.com'],
+    ];
+
+    update_option('bento_email_queue', [[
+        'email_data' => $email,
+        'timestamp' => time(),
+        'hash' => md5('reply@example.com|Subject'),
+    ]]);
+
+    $handler->process_email_queue();
+
+    global $__wp_test_state;
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+
+    expect($payload['emails'][0]['reply_to'])->toBe('reply@example.com');
+});
+
+test('Bento email handler skips invalid reply-to headers', function () {
+    update_option('bento_settings', [
+        'bento_enable_transactional' => '1',
+        'bento_site_key' => 'site',
+        'bento_publishable_key' => 'pub',
+        'bento_secret_key' => 'sec',
+        'bento_enable_reply_to' => '1',
+    ]);
+
+    $handler = new Bento_Email_Handler();
+
+    $email = [
+        'to' => 'reply@example.com',
+        'subject' => 'Subject',
+        'message' => 'Body',
+        'headers' => ['Reply-To: not-an-email'],
+    ];
+
+    update_option('bento_email_queue', [[
+        'email_data' => $email,
+        'timestamp' => time(),
+        'hash' => md5('reply@example.com|Subject'),
+    ]]);
+
+    $handler->process_email_queue();
+
+    global $__wp_test_state;
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+
+    expect($payload['emails'][0])->not->toHaveKey('reply_to');
+});
+
+test('Bento email handler normalizes recipient list', function () {
+    update_option('bento_settings', [
+        'bento_enable_transactional' => '1',
+        'bento_site_key' => 'site',
+        'bento_publishable_key' => 'pub',
+        'bento_secret_key' => 'sec',
+    ]);
+
+    $handler = new Bento_Email_Handler();
+
+    $email = [
+        'to' => 'Jane Doe <jane@example.com>, invalid, john@example.com',
+        'subject' => 'Subject',
+        'message' => 'Body',
+        'headers' => [],
+    ];
+
+    update_option('bento_email_queue', [[
+        'email_data' => $email,
+        'timestamp' => time(),
+        'hash' => md5('jane@example.com,john@example.com|Subject'),
+    ]]);
+
+    $handler->process_email_queue();
+
+    global $__wp_test_state;
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+
+    expect($payload['emails'][0]['to'])->toBe('jane@example.com, john@example.com');
+});
+
+test('Bento email handler accepts case-insensitive reply-to headers', function () {
+    update_option('bento_settings', [
+        'bento_enable_transactional' => '1',
+        'bento_site_key' => 'site',
+        'bento_publishable_key' => 'pub',
+        'bento_secret_key' => 'sec',
+        'bento_enable_reply_to' => '1',
+    ]);
+
+    $handler = new Bento_Email_Handler();
+
+    $email = [
+        'to' => 'reply@example.com',
+        'subject' => 'Subject',
+        'message' => 'Body',
+        'headers' => ['REPLY-TO: reply@example.com'],
+    ];
+
+    update_option('bento_email_queue', [[
+        'email_data' => $email,
+        'timestamp' => time(),
+        'hash' => md5('reply@example.com|Subject'),
+    ]]);
+
+    $handler->process_email_queue();
+
+    global $__wp_test_state;
+    $payload = json_decode($__wp_test_state['remote_posts'][0]['args']['body'], true);
+
+    expect($payload['emails'][0]['reply_to'])->toBe('reply@example.com');
+});
